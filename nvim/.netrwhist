@@ -1,0 +1,8 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhistcnt =6
+let g:netrw_dirhist_6='/home/simon/.config/tmux'
+let g:netrw_dirhist_5='/home/simon/.config/nvim'
+let g:netrw_dirhist_4='/home/simon/.config/git-templates'
+let g:netrw_dirhist_3='/home/simon/.zinit'
+let g:netrw_dirhist_2='/home/simon/Downloads/.config/zsh'
+let g:netrw_dirhist_1='/Users/dk8simbu/.config/alacritty'
