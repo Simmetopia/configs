@@ -6,6 +6,8 @@
 .config
 discord
 !/nvim/**
+!/home_configs/**
+!/zsh/**
 !/tmux/**
 !/awesome/**
 !/kitty/**
