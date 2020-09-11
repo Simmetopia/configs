@@ -1,0 +1,12 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhistcnt =6
+let g:netrw_dirhist_6='/Users/dk8simbu/lego/mox-user-information-service/src/user-information-service'
+let g:netrw_dirhist_5='/Users/dk8simbu/lego/mox-user-information-service/src'
+let g:netrw_dirhist_4='/Users/dk8simbu/lego/mox-user-information-service'
+let g:netrw_dirhist_3='/Users/dk8simbu/lego/moxreasoncode/src'
+let g:netrw_dirhist_2='/Users/dk8simbu/lego/moxreasoncode'
+let g:netrw_dirhist_1='/Users/dk8simbu/.config'
+let g:netrw_dirhist_0='/'
+let g:netrw_dirhist_9='/Users'
+let g:netrw_dirhist_8='/Users/dk8simbu/.config'
+let g:netrw_dirhist_7='/home/simon/.config/.config/git-templates'
