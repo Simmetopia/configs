@@ -53,6 +53,7 @@ run_once({ "perwindowlayoutd" })
 run_once({ "nm-applet -sm-disable" })
 run_once({ "compton" })
 run_once({ "~/.local/share/JetBrains/Toolbox/bin/jetbrains-toolbox" }) -- Fix for java applications
+run_once({ "xrandr -s 1920x1080" }) 
 
 -- Variable definitions
 local themes = {
@@ -404,9 +405,9 @@ globalkeys = awful.util.table.join(
               {description = "show weather", group = "widgets"}),
 
     -- Brightness
-    awful.key({ }, "XF86MonBrightnessUp", function () awful.util.spawn("xbacklight -inc 10") end,
+    awful.key({ }, "XF86MonBrightnessUp", function () awful.util.spawn("light -A 10") end,
               {description = "+10%", group = "hotkeys"}),
-    awful.key({ }, "XF86MonBrightnessDown", function () awful.util.spawn("xbacklight -dec 10") end,
+    awful.key({ }, "XF86MonBrightnessDown", function () awful.util.spawn("light -U 10") end,
               {description = "-10%", group = "hotkeys"}),
 
     -- ALSA volume control

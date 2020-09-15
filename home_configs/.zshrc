@@ -26,3 +26,5 @@ source "$HOME/.config/zsh/plugins.zsh"
 source "$HOME/.config/zsh/prompt.zsh"
 source "$HOME/.config/zsh/completions.zsh"
 
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

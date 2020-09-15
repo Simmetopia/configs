@@ -69,7 +69,7 @@ let g:startify_lists = [
   \ ]
 " Insert new bookmarks here
 " [keybind]:[location]
-let g:startify_bookmarks = [{'c': '~/.config/nvim/init.vim'},{'i3':'~/.config/i3/config'}]
+let g:startify_bookmarks = [{'c': '~/configs/configs/.config/nvim/init.vim'},{'i3':'~/.config/i3/config'}]
 " Amount of recent files to remember
 let g:startify_files_number = 8
 " Should not persist a session automatic
@@ -103,3 +103,4 @@ let g:startify_custom_header =
 tnoremap <Esc> <C-\><C-n>
 endif
 
+let g:tex_flavor='latex'
