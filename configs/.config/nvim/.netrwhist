@@ -1,5 +1,6 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhistcnt =8
+let g:netrw_dirhistcnt =9
+let g:netrw_dirhist_9='/Users/dk8simbu/configs/.git'
 let g:netrw_dirhist_8='/home/simmetopia/configs/home_configs'
 let g:netrw_dirhist_7='/home/simmetopia/configs'
 let g:netrw_dirhist_6='/Users/dk8simbu/lego/mox-user-information-service/src/user-information-service'
@@ -9,4 +10,3 @@ let g:netrw_dirhist_3='/Users/dk8simbu/lego/moxreasoncode/src'
 let g:netrw_dirhist_2='/Users/dk8simbu/lego/moxreasoncode'
 let g:netrw_dirhist_1='/Users/dk8simbu/.config'
 let g:netrw_dirhist_0='/'
-let g:netrw_dirhist_9='/Users'
