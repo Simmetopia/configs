@@ -47,6 +47,7 @@ set termguicolors
 set scrolloff=8
 set noshowmode
 set completeopt=menuone,noinsert,noselect
+set shell=/bin/bash
 
 " Give more space for displaying messages.
 set cmdheight=2
