@@ -4,6 +4,8 @@ call plug#begin('~/.vim/plugged')
 Plug 'vuciv/vim-bujo'
 Plug 'lervag/vimtex'
 
+Plug 'ryanoasis/vim-devicons'
+Plug 'preservim/nerdtree'
 Plug 'mcchrish/nnn.vim'
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'

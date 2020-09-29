@@ -22,7 +22,11 @@ set background=dark
 autocmd InsertLeave * if pumvisible() == 0 | pclose | endif
 
 " set filetypes as typescript.tsx
-autocmd BufNewFile,BufRead *.tsx,*.jsx set filetype=typescript.tsx
+autocmd BufNewFile,BufRead *.tsx,*.jsx  
+         \ set filetype=typescript.tsx |
+         \ set foldmethod=syntax |
+         \ set foldlevel=20
+ 
 " Personilzation here
 syntax on
 
