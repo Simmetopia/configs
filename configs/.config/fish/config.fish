@@ -1,10 +1,6 @@
 eval (starship init fish)
-status --is-interactive; and source (rbenv init -|psub)
 
-set MSBuildSDKsPath /usr/local/share/dotnet/sdk/(dotnet --version)/Sdks
-
-set -gx PATH ~/.cargo/bin $PATH
-set -gx PATH /Applications/Emacs.app/Contents/MacOS $PATH
+source ~/.asdf/asdf.fish
 set -gx EDITOR nvim
 set -gx VISUAL nvim
 
