@@ -4,6 +4,9 @@ call plug#begin('~/.vim/plugged')
 Plug 'vuciv/vim-bujo'
 Plug 'lervag/vimtex'
 Plug 'pantharshit00/vim-prisma'
+
+Plug 'ryanoasis/vim-devicons'
+Plug 'preservim/nerdtree'
 Plug 'mcchrish/nnn.vim'
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
@@ -30,5 +33,10 @@ Plug 'airblade/vim-gitgutter'
 Plug 'sheerun/vim-polyglot'
 Plug 'vim-airline/vim-airline'
 Plug 'gruvbox-community/gruvbox'
-
+"
+" Neovim lsp Plugins
+Plug 'neovim/nvim-lspconfig'
+Plug 'nvim-lua/completion-nvim'
+Plug 'tjdevries/nlua.nvim'
+Plug 'tjdevries/lsp_extensions.nvim'
 call plug#end()

@@ -1,4 +1,38 @@
 snippet elh "Hook/dependency Array"
 /* eslint-disable-next-line react-hooks/exhaustive-deps */
 endsnippet
+snippet pubf "public funtion"
+public ${1:function}(${2:param: T})${3::T}  {
+$4
+}
+endsnippet
 
+snippet rnnew "Creates a new react file" b
+import React, {FC} from 'react';
+import {Text, ${2:View}} from 'react-native';
+
+export const ${1:`!p snip.rv = snip.basename`}: FC = () => {
+  return (
+    <$2>
+	  <Text> Hello from `!p snip.rv = snip.basename` </Text>
+    </$2>
+  );
+};
+endsnippet
+
+snippet rwebnew "Creates a new react file" b
+import React, { FC } from 'react';
+
+export const ${1:`!p snip.rv = snip.basename`}: FC = () => {
+  return (
+    <${2:div}>
+	  <p> Hello from `!p snip.rv = snip.basename` </p>
+    </$2>
+  );
+};
+endsnippet
+
+snippet t "create translationKey"
+translate('`!p snip.rv = snip.basename`_$1')
+endsnippet
+	

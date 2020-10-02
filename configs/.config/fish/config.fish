@@ -1,4 +1,6 @@
 source ~/.asdf/asdf.fish
+source ~/.config/fish/aliases.fish
+
 eval (starship init fish)
 
 set -gx EDITOR nvim
@@ -6,6 +8,7 @@ set -gx VISUAL nvim
 
 source ~/.config/fish/nnn_completion.fish
 source ~/.config/fish/alacritty_completions.fish
+source ~/.asdf/asdf.fish
 
 
 # Meta
