@@ -3,7 +3,7 @@ call plug#begin('~/.vim/plugged')
 
 Plug 'vuciv/vim-bujo'
 Plug 'lervag/vimtex'
-
+Plug 'pantharshit00/vim-prisma'
 Plug 'mcchrish/nnn.vim'
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
@@ -14,7 +14,8 @@ Plug 'benmills/vimux'
 Plug 'SirVer/ultisnips'
 Plug 'honza/vim-snippets'
 
-Plug 'neoclide/coc.nvim', {'do': 'yarn install --frozen-lockfile'}
+
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'mhinz/vim-startify'
 
 Plug 'prettier/vim-prettier', { 'do': 'yarn install' }

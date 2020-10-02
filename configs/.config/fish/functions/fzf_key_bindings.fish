@@ -1,1 +1,1 @@
-/Users/dk8simbu/.fzf/shell/key-bindings.fish
+/home/simmetopia/.fzf/shell/key-bindings.fish

@@ -91,7 +91,7 @@ window:
 # Font configuration
 font:
   normal:
-    family: TerminessTTF Nerd Font
+    family: Monoid Nerd Font Mono 
   size: 11.0
 
   # Offset is the extra space around each character. `offset.y` can be thought of

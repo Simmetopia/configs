@@ -1,6 +1,6 @@
+source ~/.asdf/asdf.fish
 eval (starship init fish)
 
-source ~/.asdf/asdf.fish
 set -gx EDITOR nvim
 set -gx VISUAL nvim
 
