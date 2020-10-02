@@ -31,5 +31,10 @@ Plug 'airblade/vim-gitgutter'
 Plug 'sheerun/vim-polyglot'
 Plug 'vim-airline/vim-airline'
 Plug 'gruvbox-community/gruvbox'
-
+"
+" Neovim lsp Plugins
+Plug 'neovim/nvim-lspconfig'
+Plug 'nvim-lua/completion-nvim'
+Plug 'tjdevries/nlua.nvim'
+Plug 'tjdevries/lsp_extensions.nvim'
 call plug#end()

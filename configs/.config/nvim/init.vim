@@ -4,29 +4,6 @@ source ~/.config/nvim/plugins.vim
 map <SPC> <Nop>
 let mapleader=" "
 
-"Dependencies
-source ~/.config/nvim/nnn.vimrc
-source ~/.config/nvim/coc_config.vim
-source ~/.config/nvim/navigation.vim
-source ~/.config/nvim/keybinds.vim
-source ~/.config/nvim/utils.vim
-source ~/.config/nvim/jest_test.vim
-
-" Gruvbox setup
-let g:gruvbox_contrast_dark = 'hard'
-let g:gruvbox_invert_selection='0'
-
-colorscheme gruvbox
-set background=dark
-
-autocmd InsertLeave * if pumvisible() == 0 | pclose | endif
-
-" set filetypes as typescript.tsx
-autocmd BufNewFile,BufRead *.tsx,*.jsx  
-         \ set filetype=typescript.tsx |
-         \ set foldmethod=syntax |
-         \ set foldlevel=20
- 
 " Personilzation here
 syntax on
 
@@ -63,6 +40,38 @@ set updatetime=50
 " Don't pass messages to |ins-completion-menu|.
 set shortmess+=c
 
+"Dependencies
+source ~/.config/nvim/nnn.vimrc
+source ~/.config/nvim/coc_config.vim
+source ~/.config/nvim/navigation.vim
+source ~/.config/nvim/keybinds.vim
+source ~/.config/nvim/utils.vim
+source ~/.config/nvim/jest_test.vim
+
+" Gruvbox setup
+let g:gruvbox_contrast_dark = 'hard'
+let g:gruvbox_invert_selection='0'
+
+let g:gruvbox_contrast_dark = 'hard'
+
+if exists('+termguicolors')
+    let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
+    let &t_8b = "\<Esc>[48;2;%lu;%lu;%lum"
+endif
+
+let g:gruvbox_invert_selection='0'
+
+colorscheme gruvbox
+set background=dark
+
+autocmd InsertLeave * if pumvisible() == 0 | pclose | endif
+
+" set filetypes as typescript.tsx
+autocmd BufNewFile,BufRead *.tsx,*.jsx  
+         \ set filetype=typescript.tsx |
+         \ set foldmethod=syntax |
+         \ set foldlevel=20
+ 
 
 "netrw basic setup
 let g:netrw_banner = 0
@@ -111,3 +120,17 @@ tnoremap <Esc> <C-\><C-n>
 endif
 
 let g:tex_flavor='latex'
+
+
+let g:lsp_diagnostics_echo_cursor = 1
+nnoremap <leader>vd :lua vim.lsp.buf.definition()<CR>
+nnoremap <leader>vi :lua vim.lsp.buf.implementation()<CR>
+nnoremap <leader>vsh :lua vim.lsp.buf.signature_help()<CR>
+nnoremap <leader>vrr :lua vim.lsp.buf.references()<CR>
+nnoremap <leader>vrn :lua vim.lsp.buf.rename()<CR>
+nnoremap <leader>vh :lua vim.lsp.buf.hover()<CR>
+nnoremap <leader>vca :lua vim.lsp.buf.code_action()<CR>
+
+let g:completion_matching_strategy_list = ['exact', 'substring', 'fuzzy']
+
+lua require'nvim_lsp'.tsserver.setup{ on_attach=require'completion'.on_attach }
