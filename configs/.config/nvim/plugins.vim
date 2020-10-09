@@ -3,6 +3,7 @@ call plug#begin('~/.vim/plugged')
 
 Plug 'vuciv/vim-bujo'
 Plug 'lervag/vimtex'
+Plug 'pantharshit00/vim-prisma'
 
 Plug 'ryanoasis/vim-devicons'
 Plug 'preservim/nerdtree'
