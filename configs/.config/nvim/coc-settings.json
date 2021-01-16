@@ -1,10 +1,4 @@
 {
-  "eslint.filetypes": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact"
-  ],
   "eslint.autoFixOnSave": true,
   "languageserver": {
     "haskell": {
@@ -18,7 +12,5 @@
         }
       }
     }
-  },
-  "todolist.monitor": true,
-  "todolist.easyMode": true
+  }
 }

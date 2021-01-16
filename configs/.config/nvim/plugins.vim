@@ -4,7 +4,7 @@ call plug#begin('~/.vim/plugged')
 Plug 'vuciv/vim-bujo'
 Plug 'lervag/vimtex'
 Plug 'pantharshit00/vim-prisma'
-
+Plug 'jparise/vim-graphql'
 Plug 'ryanoasis/vim-devicons'
 Plug 'preservim/nerdtree'
 Plug 'mcchrish/nnn.vim'
@@ -19,7 +19,7 @@ Plug 'benmills/vimux'
 Plug 'SirVer/ultisnips'
 Plug 'honza/vim-snippets'
 
-" Plug 'neoclide/coc.nvim', {'do': 'yarn install --frozen-lockfile'}
+Plug 'neoclide/coc.nvim', {'do': 'yarn install --frozen-lockfile'}
 Plug 'mhinz/vim-startify'
 Plug 'dense-analysis/ale'
 Plug 'prettier/vim-prettier', { 'do': 'yarn install' }
@@ -36,6 +36,7 @@ Plug 'vim-airline/vim-airline'
 Plug 'gruvbox-community/gruvbox'
 Plug 'arcticicestudio/nord-vim'
 "
+Plug 'nvim-treesitter/nvim-treesitter'
 " Neovim lsp Plugins
 Plug 'neovim/nvim-lspconfig'
 Plug 'nvim-lua/completion-nvim'

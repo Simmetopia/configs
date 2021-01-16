@@ -33,6 +33,6 @@ function! _jest_test_search(fragment)
 endfunction
 
 function! _run_jest(test)
-  call VimuxRunCommand("jest " . a:test)
+  call VimuxRunCommand("yarn jest " . a:test)
 endfunction
 

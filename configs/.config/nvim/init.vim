@@ -42,13 +42,13 @@ set shortmess+=c
 
 "Dependencies
 source ~/.config/nvim/nnn.vimrc
-" source ~/.config/nvim/coc_config.vim
+source ~/.config/nvim/coc_config.vim
 source ~/.config/nvim/navigation.vim
 source ~/.config/nvim/keybinds.vim
 source ~/.config/nvim/utils.vim
 source ~/.config/nvim/jest_test.vim
 "" Used with Ale linter and native lsp
-source ~/.config/nvim/typescript.vimrc
+" source ~/.config/nvim/typescript.vimrc
 
 " Gruvbox setup
 let g:gruvbox_contrast_dark = 'hard'
@@ -127,4 +127,21 @@ let g:tex_flavor='latex'
 autocmd! User GoyoEnter Limelight
 autocmd! User GoyoLeave Limelight!
 
-lua require'nvim_lsp'.tsserver.setup{ on_attach=require'completion'.on_attach }
+" lua require'nvim_lsp'.tsserver.setup{ on_attach=require'completion'.on_attach }
+" lua <<EOF
+" require'nvim-treesitter.configs'.setup {
+"   ensure_installed = "maintained", -- one of "all", "maintained" (parsers with maintainers), or a list of languages
+"   highlight = {
+"     enable = true,              -- false will disable the whole extension
+"   },
+"   incremental_selection = {
+"     enable = true,
+"     keymaps = {
+"       init_selection = "gnn",
+"       node_incremental = "grn",
+"       scope_incremental = "grc",
+"       node_decremental = "grm",
+"     },
+"   },
+" }
+" EOF
