@@ -59,15 +59,15 @@
     (global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
     (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history))
 
-(use-package better-defaults
-  :ensure t)
 
 (use-package evil-leader
   :ensure t
   :config
   (global-evil-leader-mode)
   (evil-leader/set-leader "<SPC>")
-  (evil-leader/set-key "/" 'reload))
+  (evil-leader/set-key
+    "/" 'reload
+    "o e" 'eshell))
 
 
 (use-package evil
@@ -78,6 +78,57 @@
 (load-theme 'nord)
 
 (use-package magit
+  :ensure t)
+
+(use-package eshell
+  :ensure t)
+
+(use-package company
+  :ensure t
+  :config
+  (global-company-mode 1))
+
+(use-package eshell-up
+  :ensure t)
+(use-package eshell-z
+  :ensure t)
+(use-package shrink-path
+  :ensure t)
+(use-package esh-help
+  :ensure t)
+(use-package eshell-did-you-mean
+  :ensure t)
+
+(add-hook
+ 'eshell-mode-hook
+ (lambda ()
+   (setq pcomplete-cycle-completions nil)))
+
+(setq ivy-do-completion-in-region t) ; this is the default
+
+(defun setup-eshell-ivy-completion ()
+  (define-key eshell-mode-map [remap eshell-pcomplete] 'completion-at-point)
+  ;; only if you want to use the minibuffer for completions instead of the
+  ;; in-buffer interface
+  (setq-local ivy-display-functions-alist
+              (remq (assoc 'ivy-completion-in-region ivy-display-functions-alist)
+                    ivy-display-functions-alist)))
+
+(add-hook 'eshell-mode-hook #'setup-eshell-ivy-completion)
+
+
+(use-package eshell-syntax-highlighting
+  :after esh-mode
+  :demand t ;; Install if not already installed.
+  :config
+  ;; Enable in all Eshell buffers.
+  (eshell-syntax-highlighting-global-mode +1))
+
+(use-package esh-autosuggest
+  :hook (eshell-mode . esh-autosuggest-mode)
+  ;; If you have use-package-hook-name-suffix set to nil, uncomment and use the
+  ;; line below instead:
+  ;; :hook (eshell-mode-hook . esh-autosuggest-mode)
   :ensure t)
 
 (defun reload ()
@@ -95,7 +146,7 @@
  '(custom-safe-themes
    '("37768a79b479684b0756dec7c0fc7652082910c37d8863c35b702db3f16000f8" default))
  '(package-selected-packages
-   '(better-defaults nordless-theme evil which-key use-package toggle-test region-bindings-mode projectile powerline paredit org-super-agenda org-bullets nord-theme multiple-cursors markdown-mode magit ivy-posframe highlight-symbol git-timemachine git-gutter flycheck-joker flycheck-clj-kondo expand-region exec-path-from-shell esup dumb-jump diminish delight define-word counsel company-emoji company-anaconda clojure-mode-extra-font-locking cider aggressive-indent ace-jump-mode)))
+   '(esh-autosuggest better-defaults nordless-theme evil which-key use-package toggle-test region-bindings-mode projectile powerline paredit org-super-agenda org-bullets nord-theme multiple-cursors markdown-mode magit ivy-posframe highlight-symbol git-timemachine git-gutter flycheck-joker flycheck-clj-kondo expand-region exec-path-from-shell esup dumb-jump diminish delight define-word counsel company-emoji company-anaconda clojure-mode-extra-font-locking cider aggressive-indent ace-jump-mode)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
