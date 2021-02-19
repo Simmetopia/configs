@@ -1,26 +1,6 @@
-git --version
-fish 
 exit
+node
+node
 exit
-exit
-z -h
-z foo
-exit
-exit
-exi
-ls
-exit
-exit
-exit
-exit
-ls
-git --version
-exit
-ls
-cd .config/
-ls
-cd emacs
-ls
-edit init.el
-emacs init.el
+node
 exit

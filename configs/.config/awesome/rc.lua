@@ -48,12 +48,12 @@ local function run_once(cmd_arr)
     end
 end
 -- Autostart programs
+run_once({ "~/.screenlayout/default.sh" })
+run_once({ "~/.local/share/JetBrains/Toolbox/bin/jetbrains-toolbox" }) -- Fix for java applications
 run_once({ "kbdd" })
 run_once({ "perwindowlayoutd" })
 run_once({ "nm-applet -sm-disable" })
 run_once({ "compton" })
-run_once({ "~/.local/share/JetBrains/Toolbox/bin/jetbrains-toolbox" }) -- Fix for java applications
-run_once({ "xrandr -s 1920x1080" }) 
 
 -- Variable definitions
 local themes = {
