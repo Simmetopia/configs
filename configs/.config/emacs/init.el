@@ -10,10 +10,16 @@
 
 ;; initialize built-in package management
 (package-initialize)
-
+(use-package exec-path-from-shell
+  :ensure t
+  :config
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize)))
 ;; update packages list if we are on a new install
 (unless package-archive-contents
   (package-refresh-contents))
+
+
 
 ;; a list of pkgs to programmatically install
 ;; ensure installed via package.el
@@ -25,9 +31,8 @@
   (unless (package-installed-p package)
     (package-install package)))
 
-;; now you can
-;; (use-package pkgname) etc as per
-;; use-package example docs
+(load-file "~/.config/emacs/better-defaults.el")
+
 (use-package which-key
   :ensure t
   :config
@@ -67,9 +72,36 @@
   (evil-leader/set-leader "<SPC>")
   (evil-leader/set-key
     "/" 'reload
-    "o e" 'eshell))
+    "o e" 'eshell
+    "p f" 'counsel-git))
 
+(defun setup-tide-mode ()
+  (interactive)
+  (tide-setup)
+  (flycheck-mode +1)
+  (setq flycheck-check-syntax-automatically '(save mode-enabled))
+  (eldoc-mode +1)
+  (tide-hl-identifier-mode +1)
+  ;; company is an optional dependency. You have to
+  ;; install it separately via package-install
+  ;; `M-x package-install [ret] company`
+  (company-mode +1))
 
+(use-package web-mode :ensure t)
+(use-package flycheck :ensure t)
+(use-package tide
+  :ensure t
+  :after (typescript-mode company flycheck)
+  :hook ((typescript-mode . tide-setup)
+         (typescript-mode . tide-hl-identifier-mode)
+         (before-save . tide-format-before-save)))
+
+(require 'web-mode)
+(add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
+(add-hook 'web-mode-hook
+          (lambda ()
+            (when (string-equal "tsx" (file-name-extension buffer-file-name))
+              (setup-tide-mode))))
 (use-package evil
              :ensure t)
 (evil-mode 1)
@@ -88,68 +120,8 @@
   :config
   (global-company-mode 1))
 
-(use-package eshell-up
-  :ensure t)
-(use-package eshell-z
-  :ensure t)
-(use-package shrink-path
-  :ensure t)
-(use-package esh-help
-  :ensure t)
-(use-package eshell-did-you-mean
-  :ensure t)
-
-(add-hook
- 'eshell-mode-hook
- (lambda ()
-   (setq pcomplete-cycle-completions nil)))
-
-(setq ivy-do-completion-in-region t) ; this is the default
-
-(defun setup-eshell-ivy-completion ()
-  (define-key eshell-mode-map [remap eshell-pcomplete] 'completion-at-point)
-  ;; only if you want to use the minibuffer for completions instead of the
-  ;; in-buffer interface
-  (setq-local ivy-display-functions-alist
-              (remq (assoc 'ivy-completion-in-region ivy-display-functions-alist)
-                    ivy-display-functions-alist)))
-
-(add-hook 'eshell-mode-hook #'setup-eshell-ivy-completion)
-
-
-(use-package eshell-syntax-highlighting
-  :after esh-mode
-  :demand t ;; Install if not already installed.
-  :config
-  ;; Enable in all Eshell buffers.
-  (eshell-syntax-highlighting-global-mode +1))
-
-(use-package esh-autosuggest
-  :hook (eshell-mode . esh-autosuggest-mode)
-  ;; If you have use-package-hook-name-suffix set to nil, uncomment and use the
-  ;; line below instead:
-  ;; :hook (eshell-mode-hook . esh-autosuggest-mode)
-  :ensure t)
-
 (defun reload ()
   "reload emcs"
   (interactive)
   (load-file "~/.config/emacs/init.el"))
 
-
-
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   '("37768a79b479684b0756dec7c0fc7652082910c37d8863c35b702db3f16000f8" default))
- '(package-selected-packages
-   '(esh-autosuggest better-defaults nordless-theme evil which-key use-package toggle-test region-bindings-mode projectile powerline paredit org-super-agenda org-bullets nord-theme multiple-cursors markdown-mode magit ivy-posframe highlight-symbol git-timemachine git-gutter flycheck-joker flycheck-clj-kondo expand-region exec-path-from-shell esup dumb-jump diminish delight define-word counsel company-emoji company-anaconda clojure-mode-extra-font-locking cider aggressive-indent ace-jump-mode)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )

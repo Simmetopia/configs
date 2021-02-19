@@ -14,7 +14,7 @@ import {Text, ${2:View}} from 'react-native';
 export const ${1:`!p snip.rv = snip.basename`}: FC = () => {
   return (
     <$2>
-	  <Text> Hello from `!p snip.rv = snip.basename` </Text>
+			<Text> Hello from `!p snip.rv = snip.basename` </Text>
     </$2>
   );
 };
@@ -26,13 +26,29 @@ import React, { FC } from 'react';
 export const ${1:`!p snip.rv = snip.basename`}: FC = () => {
   return (
     <${2:div}>
-	  <p> Hello from `!p snip.rv = snip.basename` </p>
+			<p> Hello from ${1} </p>
     </$2>
   );
 };
 endsnippet
 
 snippet t "create translationKey"
-translate('`!p snip.rv = snip.basename`_$1')
+t('`!p snip.rv = snip.basename`_$1')
+endsnippet
+
+snippet gmut "create mutation"
+const `!p snip.rv = snip.basename`Mutation_gql = gql\`
+	mutation `!p snip.rv = snip.basename`Mutation {
+		$1
+	}
+\`
+endsnippet
+
+snippet gque "create query"
+const `!p snip.rv = snip.basename`Query_gql = gql\`
+	mutation `!p snip.rv = snip.basename`Query {
+		$1
+	}
+\`
 endsnippet
 	
