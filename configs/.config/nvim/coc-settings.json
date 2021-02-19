@@ -1,5 +1,6 @@
 {
   "eslint.autoFixOnSave": true,
+  "graphql.debug": true,
   "languageserver": {
     "haskell": {
       "command": "hie-wrapper",
