@@ -4,9 +4,7 @@ services:
     image: library/mysql:latest
     restart: always
     environment:
-      MYSQL_DATABASE: "laravel"
-      MYSQL_USER: "knitzilla_db_user"
-      MYSQL_PASSWORD: "lightsabers_suck"
+      MYSQL_DATABASE: "database"
       MYSQL_ROOT_PASSWORD: "rootie"
     ports:
       # <Port exposed> : < MySQL Port running inside container>
