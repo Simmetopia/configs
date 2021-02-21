@@ -27,6 +27,7 @@ Plug 'tpope/vim-dispatch'
 Plug 'tpope/vim-commentary'
 
 Plug 'tpope/vim-surround'
+Plug 'vim-crystal/vim-crystal'
 
 Plug 'airblade/vim-gitgutter'
 Plug 'vim-airline/vim-airline'
