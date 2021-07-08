@@ -12,3 +12,4 @@ source ~/.config/fish/alacritty_completions.fish
 # Meta
 set -g fish_user_paths "/usr/local/sbin" $fish_user_paths
 set -g fish_user_paths "$HOME/.config/composer/vendor/bin/" $fish_user_paths
+set -g fish_user_paths "$HOME/.dotnet/tools/" $fish_user_paths

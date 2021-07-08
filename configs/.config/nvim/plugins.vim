@@ -33,6 +33,7 @@ Plug 'airblade/vim-gitgutter'
 Plug 'vim-airline/vim-airline'
 Plug 'gruvbox-community/gruvbox'
 Plug 'arcticicestudio/nord-vim'
+Plug 'elixir-editors/vim-elixir'
 
 " Neovim lsp Plugins
 Plug 'nvim-lua/popup.nvim'
