@@ -1,0 +1,13 @@
+[Unit]
+Description=Monitor configs folder and push to Git
+After=network.target
+
+[Service]
+User=simmetopia
+Group=simmetopia
+ExecStart=/home/simmetopia/configs/sync.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
