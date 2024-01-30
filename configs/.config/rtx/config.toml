@@ -33,6 +33,6 @@ shorthands_file = '~/.config/rtx/shorthands.toml' # path to the shorthands file,
 disable_default_shorthands = false # disable the default shorthands, see `RTX_DISABLE_DEFAULT_SHORTHANDS`
 
 experimental = true # enable experimental features
-log_level = 'debug' # log verbosity, see `RTX_LOG_LEVEL`
+log_level = 'error' # log verbosity, see `RTX_LOG_LEVEL`
 
                        # this can also be specified in a plugin (see below in "Aliases")
