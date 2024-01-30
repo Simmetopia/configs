@@ -1,0 +1,7 @@
+# This file is created by ibus-daemon, please do not modify it.
+# This file allows processes on the machine to find the
+# ibus session bus with the below address.
+# If the IBUS_ADDRESS environment variable is set, it will
+# be used rather than this file.
+IBUS_ADDRESS=unix:path=/home/simmetopia/.cache/ibus/dbus-21Dyung4,guid=d7b7e1fb0b262b3da0443abb648169bf
+IBUS_DAEMON_PID=19732

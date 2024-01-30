@@ -1,0 +1,8 @@
+services:
+  livebook:
+    image: ghcr.io/livebook-dev/livebook
+    network_mode: "host"
+    environment:
+      - LIVEBOOK_PORT=8090
+      - LIVEBOOK_IFRAME_PORT=8091
+      - LIVEBOOK_PASSWORD="elixirerdetbedste"

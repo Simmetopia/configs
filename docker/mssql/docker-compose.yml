@@ -1,0 +1,23 @@
+version: "3.2"
+services:
+    db:
+        container_name: db
+        ports: 
+            - 1433:1433
+        image: "mcr.microsoft.com/mssql/server"
+        environment:
+            SA_PASSWORD: "ZsQPJst6pcZQaLHt"
+            ACCEPT_EULA: "Y"
+        volumes:
+            - mssql_server_data:/var/opt/mssql
+        logging: 
+            driver: "none"
+        restart: unless-stopped
+        healthcheck:
+            test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$$SA_PASSWORD" -Q "SELECT 1" || exit 1
+            interval: 5s
+            timeout: 10s
+            retries: 5
+            start_period: 10s
+volumes:
+  mssql_server_data:

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  type: NodePort
+  ports:
+   - port: 5432
+     targetPort: 1337
+  selector:
+   app: postgres

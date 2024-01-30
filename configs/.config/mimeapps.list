@@ -1,0 +1,28 @@
+[Default Applications]
+text/html=userapp-Firefox-1T6LC2.desktop
+x-scheme-handler/http=userapp-Firefox-1T6LC2.desktop
+x-scheme-handler/https=userapp-Firefox-1T6LC2.desktop
+x-scheme-handler/about=google-chrome.desktop
+x-scheme-handler/unknown=google-chrome.desktop
+x-scheme-handler/chrome=userapp-Firefox-1T6LC2.desktop
+application/x-extension-htm=userapp-Firefox-1T6LC2.desktop
+application/x-extension-html=userapp-Firefox-1T6LC2.desktop
+application/x-extension-shtml=userapp-Firefox-1T6LC2.desktop
+application/xhtml+xml=userapp-Firefox-1T6LC2.desktop
+application/x-extension-xhtml=userapp-Firefox-1T6LC2.desktop
+application/x-extension-xht=userapp-Firefox-1T6LC2.desktop
+x-scheme-handler/jetbrains=jetbrains-toolbox.desktop
+
+[Added Associations]
+x-scheme-handler/sms=org.gnome.Shell.Extensions.GSConnect.desktop;
+x-scheme-handler/tel=org.gnome.Shell.Extensions.GSConnect.desktop;
+x-scheme-handler/http=userapp-Firefox-1T6LC2.desktop;
+x-scheme-handler/https=userapp-Firefox-1T6LC2.desktop;
+x-scheme-handler/chrome=userapp-Firefox-1T6LC2.desktop;
+text/html=userapp-Firefox-1T6LC2.desktop;
+application/x-extension-htm=userapp-Firefox-1T6LC2.desktop;
+application/x-extension-html=userapp-Firefox-1T6LC2.desktop;
+application/x-extension-shtml=userapp-Firefox-1T6LC2.desktop;
+application/xhtml+xml=userapp-Firefox-1T6LC2.desktop;
+application/x-extension-xhtml=userapp-Firefox-1T6LC2.desktop;
+application/x-extension-xht=userapp-Firefox-1T6LC2.desktop;
