@@ -4,7 +4,7 @@ local act = wezterm.action
 local config = {}
 
 config.color_scheme = 'Catppuccin Mocha'
-config.font = wezterm.font 'JetBrainsMono Nerd Font'
+config.font = wezterm.font '0xProto Nerd Font'
 
 wezterm.on('mux-startup', function()
   local tab, pane, window = mux.spawn_window {}
