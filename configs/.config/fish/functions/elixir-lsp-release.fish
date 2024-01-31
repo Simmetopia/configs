@@ -10,9 +10,9 @@ function elixir-lsp-release
   MIX_ENV=prod mix compile
 
   # Build release
-  mkdir ~/tmp/elixir-lsp-release
   MIX_ENV=prod mix elixir_ls.release2 -o ../elixir-lsp-release
 
+  cd ~
   # remove elixir ls repo
   rm -rf ~/tmp/elixir-ls
 end
