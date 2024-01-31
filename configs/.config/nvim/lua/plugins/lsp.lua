@@ -6,6 +6,7 @@ local M = {
     -- LSP Support
     { "williamboman/mason-lspconfig.nvim" },
     { "williamboman/mason.nvim" },
+    { "scalameta/nvim-metals" },
 
     -- Autocompletion
     { "hrsh7th/nvim-cmp", },
