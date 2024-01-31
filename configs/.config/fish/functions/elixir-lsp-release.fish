@@ -1,7 +1,7 @@
 function elixir-lsp-release
   
   # Clone elixir ls repo
-  git clone git@github.com:elixir-lsp/elixir-ls.git ~/tmp/elixir-ls
+  git clone https://github.com/elixir-lsp/elixir-ls.git ~/tmp/elixir-ls
   cd ~/tmp/elixir-ls
 
 
