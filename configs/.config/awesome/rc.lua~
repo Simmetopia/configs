@@ -73,7 +73,7 @@ local window_titlebar = true
 local dmenu_settings =
 "dmenu_run -fn 'Meslo LGS Regular-10' -i -l 10 -p 'Run:' -nb '#32302f' -nf '#a89984' -sb '#458588' -sf '#2d2d2d' -h 10 -w 800 -y 350 -x 400"
 local rofi_settings = "rofi -show run"
-local i3lock_settings = "betterlockscreen -l"
+local i3lock_settings = "i3lock -i ./themes/darkblue/wallpapers/itm-blue.png"
 local modkey = "Mod4"
 local altkey = "Mod1"
 local terminal = "wezterm"
