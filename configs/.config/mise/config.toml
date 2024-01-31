@@ -4,6 +4,7 @@
 node = 'lts'
 python = ['3.10', '3.11']
 erlang = "26.2.1"
+lazygit = "latest"
 
 [settings]
 # plugins can read the versions files used by other version managers (if enabled by the plugin)
