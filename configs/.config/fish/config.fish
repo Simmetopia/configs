@@ -1,5 +1,5 @@
 source ~/.config/fish/aliases.fish
-source ~/.local/bin/mise activate fish 
+eval "~/.local/bin/mise activate fish | source" 
 
 set -gx EDITOR nvim
 set -gx VISUAL nvim
