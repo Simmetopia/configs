@@ -3,6 +3,7 @@
 # you can set these with `mise use -g`
 node = 'lts'
 python = ['3.10', '3.11']
+erlang = "26.2.1"
 
 [settings]
 # plugins can read the versions files used by other version managers (if enabled by the plugin)
