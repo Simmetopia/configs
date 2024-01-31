@@ -24,6 +24,3 @@ set -g FLYCTL_INSTALL "$HOME/.fly"
 
 # opam configuration
 source /home/simmetopia/.opam/opam-init/init.fish > /dev/null 2> /dev/null; or true
-
-~/.local/bin/mise activate fish | source
-~/.local/bin/mise activate fish | source
