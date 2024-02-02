@@ -7,3 +7,6 @@
 [filesystem "Oracle Corporation|21.0.2|/dev/mapper/vgubuntu-root"]
 	timestampResolution = 3793 nanoseconds
 	minRacyThreshold = 7817 microseconds
+[filesystem "JetBrains s.r.o.|17.0.9|/dev/mapper/vgubuntu-root"]
+	timestampResolution = 5986 nanoseconds
+	minRacyThreshold = 5634 microseconds
