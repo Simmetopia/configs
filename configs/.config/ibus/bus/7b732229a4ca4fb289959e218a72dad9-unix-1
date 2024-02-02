@@ -3,5 +3,5 @@
 # ibus session bus with the below address.
 # If the IBUS_ADDRESS environment variable is set, it will
 # be used rather than this file.
-IBUS_ADDRESS=unix:abstract=/home/simmetopia/.cache/ibus/dbus-mGoU4P1f,guid=ea5e9fa6128606a3caa539a165bc86d1
-IBUS_DAEMON_PID=41934
+IBUS_ADDRESS=unix:abstract=/home/simmetopia/.cache/ibus/dbus-QfcV8G9f,guid=8111b69f384b2cc77adce79a65bc8805
+IBUS_DAEMON_PID=5689
