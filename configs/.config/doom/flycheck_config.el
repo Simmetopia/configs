@@ -50,8 +50,7 @@
 
 (after! 'elixir (
                  lsp-elixir-local-server-command you reconfigure a package, make sure to wrap your config in an
-                                                 
-;; `after!' block, otherwise Doom's defaults may override your settings. E.g.
+                                                 iUUj
 ;;
 ;;   (after! PACKAGE
 ;;     (setq x y))
