@@ -3,11 +3,11 @@ function install_emacs
 
   cd emacs/
 
-  sudo apt gcc-10 install -y autoconf make gcc texinfo libgtk-3-dev libxpm-dev \
+  sudo apt install -y autoconf make gcc texinfo libgtk-3-dev libxpm-dev \
        libjpeg-dev libgif-dev libtiff5-dev libgnutls28-dev libncurses5-dev \
-       libjansson-dev libharfbuzz-dev libharfbuzz-bin libgccjit*
+       libjansson-dev libharfbuzz-dev libharfbuzz-bin libgccjit-13-dev
 
-  set CC "gcc-10" ./autogen.sh
+  ./autogen.sh
 
   ./configure --with-native-compilation
   make
