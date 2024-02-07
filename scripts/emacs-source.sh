@@ -1,3 +1,4 @@
+#!/usr/bin/fish
 function install_emacs {
   git clone --depth=1 --single-branch --branch master https://github.com/emacs-mirror/emacs.git
 
