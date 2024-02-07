@@ -48,6 +48,9 @@
 (setq org-directory "~/org/")
 (setq doom-font "0xProto Nerd Font")
 
+(after! elixir
+  (setq lsp-elixir-local-server-command '("/home/simmetopia/tmp/elixir-lsp-release/language_server.sh")))
+
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `after!' block, otherwise Doom's defaults may override your settings. E.g.
 ;;
