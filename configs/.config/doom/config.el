@@ -34,12 +34,14 @@
 ;; `load-theme' function. This is the default:
 
 (setq doom-theme 'catppuccin)
+
 (setq catppuccin-flavor 'mocha) ;; or 'latte, 'macchiato, or 'mocha
+
 (catppuccin-reload)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
-(setq display-line-numbers-type t)
+(setq display-line-numbers-type rel)
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
