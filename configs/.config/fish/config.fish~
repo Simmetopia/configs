@@ -1,5 +1,6 @@
 source ~/.config/fish/aliases.fish
 eval "~/.local/bin/mise activate fish | source" 
+source (op completion fish)
 
 set -gx EDITOR nvim
 set -gx VISUAL nvim
