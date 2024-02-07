@@ -37,7 +37,9 @@
 
 (setq catppuccin-flavor 'mocha) ;; or 'latte, 'macchiato, or 'mocha
 
-(after!catppuccin-theme )
+(after! catppuccin-theme(
+                         
+                         ) )
 (catppuccin-reload)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
