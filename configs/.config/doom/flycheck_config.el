@@ -48,7 +48,7 @@
 (setq org-directory "~/org/")
 (setq doom-font "0xProto Nerd Font")
 
-()
+(after! elixir)
 
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `after!' block, otherwise Doom's defaults may override your settings. E.g.
