@@ -37,7 +37,10 @@
 
 (setq catppuccin-flavor 'mocha) ;; or 'latte, 'macchiato, or 'mocha
 
-(catppuccin-reload)
+(after! catppuccin-theme(
+
+catppuccin-reload
+                         ) )
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
