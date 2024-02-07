@@ -1,4 +1,4 @@
-function install_emacs {
+function install_emacs 
   git clone --depth=1 --single-branch --branch master https://github.com/emacs-mirror/emacs.git
 
   cd emacs/
@@ -12,4 +12,4 @@ function install_emacs {
   ./configure --with-native-compilation
   make
   sudo make install
-}
+end
