@@ -5,8 +5,6 @@ function pinit
   mix deps.compile
   cd assets
   yarn
-  cd ../assets_v2
-  yarn
   cd ..
   nvim
 end
