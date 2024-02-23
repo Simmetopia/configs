@@ -10,3 +10,6 @@
 [filesystem "JetBrains s.r.o.|17.0.9|/dev/mapper/vgubuntu-root"]
 	timestampResolution = 5986 nanoseconds
 	minRacyThreshold = 5634 microseconds
+[filesystem "JetBrains s.r.o.|17.0.10|/dev/mapper/vgubuntu-root"]
+	timestampResolution = 4138 nanoseconds
+	minRacyThreshold = 5280 microseconds
