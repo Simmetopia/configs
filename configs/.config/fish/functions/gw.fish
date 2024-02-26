@@ -2,4 +2,4 @@ function gw
     git switch $argv
 end
 
-complete -c gw -w 'git switch'
+complete -c gw --wraps 'git switch'
