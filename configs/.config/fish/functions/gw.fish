@@ -1,4 +1,4 @@
-function gw
+function gw --description 'git switch shorthand'
     git switch $argv
 end
 
