@@ -7,10 +7,8 @@ if type -fq php
 end
 
 alias gwt="git worktree"
-alias gb="git switch"
 
 alias gprune='git branch --merged | egrep -v "(^\*|master|main|develop|\w*\/)" | xargs git branch -d'
-
 
 if type -fq kubectl 
   alias k="kubectl"
