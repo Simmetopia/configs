@@ -37,6 +37,7 @@
   "overseer.nvim": { "branch": "master", "commit": "4855aefcf335bbac71eea9c6a888958fb1ed1e1a" },
   "plenary.nvim": { "branch": "master", "commit": "4f71c0c4a196ceb656c824a70792f3df3ce6bb6d" },
   "resession.nvim": { "branch": "master", "commit": "742aba4998123fc11f490a3aeffe8f550b2cb789" },
+  "rest.nvim": { "branch": "main", "commit": "b1c84475a8f053037cecf5249e6b69af5a7548d6" },
   "ripgrep": { "branch": "master", "commit": "6ebebb2aaa9991694aed10b944cf2e8196811e1c" },
   "stylua.nvim": { "branch": "main", "commit": "15336a99c599ff10b04d324310bc1295f5203acb" },
   "tabular": { "branch": "master", "commit": "339091ac4dd1f17e225fe7d57b48aff55f99b23a" },
