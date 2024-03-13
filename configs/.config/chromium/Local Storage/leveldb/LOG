@@ -2,3 +2,5 @@
 2024/03/13-08:40:31.079 4f6a Recovering log #3
 2024/03/13-08:40:31.080 4f6a Reusing old log /home/simmetopia/.config/chromium/Local Storage/leveldb/000003.log 
 2024/03/13-10:45:38.157 4f69 Level-0 table #5: started
+2024/03/13-10:45:38.174 4f69 Level-0 table #5: 8317 bytes OK
+2024/03/13-10:45:38.183 4f69 Delete type=0 #3
