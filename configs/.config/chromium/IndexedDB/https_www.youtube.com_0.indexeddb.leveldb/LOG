@@ -152,3 +152,16 @@
 2024/03/13-08:55:57.798 4fe8 compacted to: files[ 0 0 1 0 0 0 0 ]
 2024/03/13-08:55:57.798 4fe8 Delete type=2 #43
 2024/03/13-08:55:57.799 4fe8 Manual compaction at level-1 from '\x00\x13\x00\x00\x05' @ 1841 : 1 .. '\x00\x05\x00\x00\x00' @ 0 : 0; will stop at (end)
+2024/03/13-08:56:59.757 4f6a Level-0 table #46: started
+2024/03/13-08:56:59.769 4f6a Level-0 table #46: 41448 bytes OK
+2024/03/13-08:56:59.785 4f6a Delete type=0 #42
+2024/03/13-08:56:59.785 4f6a Delete type=2 #41
+2024/03/13-08:56:59.785 4f6a Manual compaction at level-0 from (begin) .. (end); will stop at (end)
+2024/03/13-08:56:59.785 4f6a Manual compaction at level-1 from (begin) .. (end); will stop at '\x00\x1a\x01\x1f\x04\x03\x01\x03\x00N\x00E\x00W\x03\x00\x00\x00\x00\x00\x00L@\x03\x00\x00\xcd\x04m\xe3xB\x00\x03\x00\x00\x00\x00\x00\x00\xf0?' @ 2564 : 1
+2024/03/13-08:56:59.785 4f6a Compacting 1@1 + 1@2 files
+2024/03/13-08:56:59.792 4f6a Generated table #47@1: 237 keys, 3666 bytes
+2024/03/13-08:56:59.793 4f6a Compacted 1@1 + 1@2 files => 3666 bytes
+2024/03/13-08:56:59.801 4f6a compacted to: files[ 0 0 1 0 0 0 0 ]
+2024/03/13-08:56:59.801 4f6a Delete type=2 #44
+2024/03/13-08:56:59.801 4f6a Delete type=2 #46
+2024/03/13-08:56:59.801 4f6a Manual compaction at level-1 from '\x00\x1a\x01\x1f\x04\x03\x01\x03\x00N\x00E\x00W\x03\x00\x00\x00\x00\x00\x00L@\x03\x00\x00\xcd\x04m\xe3xB\x00\x03\x00\x00\x00\x00\x00\x00\xf0?' @ 2564 : 1 .. (end); will stop at (end)
