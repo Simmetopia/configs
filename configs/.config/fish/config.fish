@@ -21,7 +21,4 @@ set -g ERL_AFLAGS "-kernel shell_history enabled"
 
 set -g FLYCTL_INSTALL "$HOME/.fly"
 
-# op completion fish | source
-
-# opam configuration
-source /home/simmetopia/.opam/opam-init/init.fish > /dev/null 2> /dev/null; or true
+/home/simmetopia/.local/share/mise/installs/zoxide/latest/bin/zoxide init fish | source

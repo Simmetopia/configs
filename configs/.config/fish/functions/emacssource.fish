@@ -1,4 +1,4 @@
-function install_emacs 
+function emacssource
   echo "Cloning Emacs repository..."
   git clone --depth=1 --single-branch --branch master https://github.com/emacs-mirror/emacs.git
 
@@ -22,5 +22,5 @@ function install_emacs
 
   echo "Installing Emacs..."
   sudo make install
-end
 
+end
