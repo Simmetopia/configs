@@ -13,7 +13,7 @@ theme.taglist_font                             = "Meslo LGS Bold 10"
 theme.tasklist_font                            = "Cascadia Code 10"
 
 theme.bg_normal                                = "#32302f"
-theme.fg_normal                                = "#a89984"
+theme.fg_normal                                = "#FFFFFF"
 theme.bg_focus                                 = "#32302f"
 theme.fg_focus                                 = "#232323"
 theme.bg_urgent                                = "#C92132"
@@ -43,7 +43,7 @@ theme.border_focus                             = "#3f3f3f"
 theme.border_marked                            = "#CC9393"
 
 theme.titlebar_bg_normal                       = "#3f3f3f"
-theme.titlebar_fg_normal                       = "#282828"
+theme.titlebar_fg_normal                       = "#FFF"
 
 theme.titlebar_bg_focus                        = "#2b5355"
 theme.titlebar_fg_focus                        = "#282828"
@@ -157,21 +157,10 @@ local markup                                   = lain.util.markup
 -- Widgets
 local clock_icon                               = wibox.widget.imagebox(theme.widget_clock)
 local clock                                    = awful.widget.textclock("<span font=\"Meslo LGS Regular 10\" color=\"" ..
-theme.white .. "\"> %a %d %b  %H:%M </span>")
+  theme.white .. "\"> %a %d %b  %H:%M </span>")
 local clock_widget                             = wibox.container.background(
-wibox.container.margin(wibox.widget { clock_icon, clock, layout = wibox.layout.align.horizontal }, 8, 8),
+  wibox.container.margin(wibox.widget { clock_icon, clock, layout = wibox.layout.align.horizontal }, 8, 8),
   theme.transparent)
-
--- Calendar
-local calendar                                 = lain.widget.calendar({
-  cal = "cal --color=always",
-  attach_to = { clock_widget },
-  notification_preset = {
-    font = "Meslo LGS Regular 10",
-    fg   = theme.fg_normal,
-    bg   = theme.bg_normal
-  }
-})
 
 -- Battery
 local bat_icon                                 = wibox.widget.imagebox(theme.widget_battery)
@@ -264,71 +253,70 @@ local batupd                                   = lain.widget.bat({
   end
 })
 
-local batbg                                    = wibox.container.background(batbar, "#474747", gears.shape.rectangle)
-local bat_widget                               = wibox.container.margin(batbg, 2, 7, 4, 4)
+
+-- system76 power control
+
+local power_profile_widget = wibox.widget {
+  text = "Power Profiles",
+  widget = wibox.widget.textbox
+}
+
+local function updatePowerProfile()
+  awful.spawn.easy_async("system76-power profile", function(stdout, stderr, reason, exit_code)
+    local profile = stdout:match("Power Profile: (%w+)")
+    if profile then
+      power_profile_widget.text = " " .. profile .. " "
+    end
+  end)
+end
+
+-- Your menu definition here
+local mymainmenu = awful.menu({
+  items = {
+    { "Performance", function()
+      awful.spawn.easy_async_with_shell("system76-power profile performance", function()
+        updatePowerProfile() -- Update the profile text after the change
+      end)
+    end },
+    { "Balanced", function()
+      awful.spawn.easy_async_with_shell("system76-power profile balanced", function()
+        updatePowerProfile() -- Update the profile text after the change
+      end)
+    end },
+    { "Battery Saver", function()
+      awful.spawn.easy_async_with_shell("system76-power profile battery", function()
+        updatePowerProfile() -- Update the profile text after the change
+      end)
+    end }
+  }
+})
+
+
+-- Update on startup
+updatePowerProfile()
+
+-- Button click to show menu
+power_profile_widget:buttons(
+  awful.util.table.join(
+    awful.button({}, 1, function() mymainmenu:toggle() end)
+  )
+)
+
+local batbg                   = wibox.container.background(batbar, "#474747", gears.shape.rectangle)
+local bat_widget              = wibox.container.margin(batbg, 2, 7, 4, 4)
 
 --local battery_widget = wibox.container.background(wibox.container.margin(wibox.widget { bat_icon, bat_widget, bat.widget, layout = wibox.layout.align.horizontal }, 1, 1), theme.gray)
-local battery_widget1                          = wibox.container.background(
-wibox.container.margin(wibox.widget { bat_icon, bat_widget, layout = wibox.layout.align.horizontal }, 8, 8),
+local battery_widget1         = wibox.container.background(
+  wibox.container.margin(wibox.widget { bat_icon, bat_widget, layout = wibox.layout.align.horizontal }, 8, 8),
   theme.transparent)
 
-local battery_widget2                          = wibox.container.background(
-wibox.container.margin(wibox.widget { batspr_l, bat.widget, batspr_r, layout = wibox.layout.align.horizontal }, 8, 8),
-  theme.transparent)
-
--- MEM
-local mem_icon                                 = wibox.widget.imagebox(theme.widget_mem)
-local mem                                      = lain.widget.mem({
-  settings = function()
-    widget:set_markup(markup.font(theme.font,
-      markup.fg.color(theme.fg_widget, " " .. mem_now.used .. "MB [" .. mem_now.perc .. "%]")))
-  end
-})
-local mem_widget                               = wibox.container.background(
-wibox.container.margin(wibox.widget { mem_icon, mem.widget, layout = wibox.layout.align.horizontal }, 8, 8),
-  theme.transparent)
-
-
--- CPU
-local cpu_icon = wibox.widget.imagebox(theme.widget_cpu)
-local cpu = lain.widget.cpu({
-  settings = function()
-    widget:set_markup(markup.font(theme.font, markup.fg.color(theme.fg_widget, " " .. cpu_now.usage .. "% ")))
-  end
-})
-local cpu_widget = wibox.container.background(
-wibox.container.margin(wibox.widget { cpu_icon, cpu.widget, layout = wibox.layout.align.horizontal }, 8, 8),
-  theme.transparent)
-
-
--- Coretemp (lain, average)
-local temp_icon = wibox.widget.imagebox(theme.widget_temp)
-local temp = lain.widget.temp({
-  settings = function()
-    widget:set_markup(markup.font(theme.font, markup.fg.color(theme.fg_widget, " " .. coretemp_now .. "° ")))
-  end
-})
-local temp_widget = wibox.container.background(
-wibox.container.margin(wibox.widget { temp_icon, temp.widget, layout = wibox.layout.align.horizontal }, 8, 8),
-  theme.transparent)
-
-
--- FS
-local fs_icon = wibox.widget.imagebox(theme.widget_hdd)
-local fs = lain.widget.fs({
-  notification_preset = { fg = theme.fg_normal, bg = theme.bg_normal, font = theme.fs_font },
-  settings = function()
-    local fsp = string.format(" %3.2f %s ", fs_now["/"].free, fs_now["/"].units)
-    widget:set_markup(markup.font(theme.font, markup.fg.color(theme.fg_widget, fsp)))
-  end
-})
-local fs_widget = wibox.container.background(
-wibox.container.margin(wibox.widget { fs_icon, fs.widget, layout = wibox.layout.align.horizontal }, 8, 8),
+local battery_widget2         = wibox.container.background(
+  wibox.container.margin(wibox.widget { batspr_l, bat.widget, batspr_r, layout = wibox.layout.align.horizontal }, 8, 8),
   theme.transparent)
 
 -- ALSA volume bar
-local vol_icon = wibox.widget.imagebox(theme.widget_vol)
-theme.volume = lain.widget.alsabar({
+local vol_icon                = wibox.widget.imagebox(theme.widget_vol)
+theme.volume                  = lain.widget.alsabar({
   width = 45,
   border_width = 0,
   ticks = true,
@@ -378,7 +366,7 @@ theme.volume.bar:buttons(awful.util.table.join(
 local volumebg = wibox.container.background(theme.volume.bar, "#888888", gears.shape.rectangle)
 local vol_widget = wibox.container.margin(volumebg, 2, 7, 4, 4)
 local volume_widget = wibox.container.background(
-wibox.container.margin(wibox.widget { vol_icon, vol_widget, layout = wibox.layout.align.horizontal }, 0, 0),
+  wibox.container.margin(wibox.widget { vol_icon, vol_widget, layout = wibox.layout.align.horizontal }, 0, 0),
   theme.transparent)
 
 function theme.connect(s)
@@ -396,7 +384,7 @@ function theme.connect(s)
   --awful.tag(awful.util.tagnames, s, awful.layout.layouts[1])
   layout = { awful.layout.layouts[1], awful.layout.layouts[1], awful.layout.layouts[1], awful.layout.layouts[3], awful
       .layout.layouts[3], awful.layout.layouts[5] }
-  awful.tag({ " </> ", " >_ ", " web ", " & ", " etc ", " # " }, s, layout)
+  awful.tag({ " 1 ", " 2 ", " 3 ", " 4 ", " 5 ", " 6 " }, s, layout)
 
   -- Create a promptbox for each screen
   s.mypromptbox = awful.widget.prompt()
@@ -428,18 +416,12 @@ function theme.connect(s)
     awful.util.table.join(awful.button({}, 1, function() kbdcfg.switch_next() end),
       awful.button({}, 3, function() kbdcfg.menu:toggle() end))
   )
-  globalkeys = awful.util.table.join(globalkeys,
-    -- Shift-Alt to change keyboard layout
-    awful.key({ "Shift" }, "Alt_L", function() kbdcfg.switch_next() end),
-    -- Alt-Shift to change keyboard layout
-    awful.key({ "Mod1" }, "Shift_L", function() kbdcfg.switch_next() end)
-  )
   -- Create the wibox
-  s.mywibox = awful.wibar({ position = "top", screen = s, height = 32, bg = theme.bg_normal .. '00', fg = theme.fg_focus, })
+  s.mywibox = awful.wibar({ position = "top", screen = s, height = 32, bg = theme.bg_normal, fg = theme.fg_normal, })
   -- Add widgets to the wibox
   s.mywibox:setup {
     layout = wibox.layout.align.horizontal,
-    {     -- Left widgets
+    { -- Left widgets
       layout = wibox.layout.fixed.horizontal,
       s.mytaglist,
       s.mypromptbox
@@ -449,27 +431,20 @@ function theme.connect(s)
       layout = wibox.layout.fixed.horizontal,
       wibox.widget.systray()
     },
-    {     -- Right widgets
+    { -- Right widgets
       layout = wibox.layout.fixed.horizontal,
 
       kbdcfg.widget,
       -- Volume
       volume_widget,
-      -- Fs widget
-      fs_widget,
       -- Temp
-      temp_widget,
-      -- CPU widget
-      cpu_widget,
-      -- Mem widget
-      mem_widget,
-      -- Battery widget
       battery_widget1,
       battery_widget2,
       -- Clock
       clock_widget,
       -- Layout box
       s.mylayoutbox,
+      power_profile_widget
     },
   }
 end

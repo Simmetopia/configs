@@ -3,8 +3,10 @@ local mux = wezterm.mux
 local act = wezterm.action
 local config = {}
 
+config.enable_wayland = false
+
 config.color_scheme = 'Catppuccin Mocha'
-config.font = wezterm.font '0xProto Nerd Font'
+config.font = wezterm.font 'FiraCode Nerd Font'
 
 wezterm.on('mux-startup', function()
   local tab, pane, window = mux.spawn_window {}

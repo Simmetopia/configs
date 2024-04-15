@@ -3,6 +3,7 @@ function elixir-lsp-release
   # Clone elixir ls repo
   git clone https://github.com/elixir-lsp/elixir-ls.git ~/tmp/elixir-ls
   cd ~/tmp/elixir-ls
+  git checkout v0.20.0
 
 
   # Install dependencies and compile

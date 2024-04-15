@@ -62,11 +62,10 @@ run_once({ "compton" })
 
 -- Variable definitions
 local themes = {
-  "yellow",   -- 1
   "darkblue", -- 2
 }
 -- Choose the theme
-local chosen_theme = themes[2]
+local chosen_theme = themes[1]
 -- Set false to disable titlebar
 local window_titlebar = true
 -- Settings for dmenu prompt
@@ -369,6 +368,14 @@ globalkeys = awful.util.table.join(
   awful.key({}, "F3", function()
     scratch.drop(terminal .. " -e nnn", "center", "center", 0.75, 0.7, true, mouse.screen)
   end),
+
+  awful.key({ modkey }, "p", function()
+    awful.util.spawn("rofi -show window")
+  end),
+
+  awful.key({ modkey, "Shift", "Alt" }, "w", function()
+    awful.spawn("systemctl suspend")
+  end, { description = "suspend the system", group = "custom" }),
 
   -- Standard program
   awful.key({ modkey }, "Return", function()
