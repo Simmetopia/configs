@@ -6,20 +6,9 @@ local M = {
     -- LSP Support
     { "williamboman/mason-lspconfig.nvim" },
     { "williamboman/mason.nvim" },
-    { "scalameta/nvim-metals" },
-
-    -- Autocompletion
-    { "hrsh7th/nvim-cmp", },
-    { "hrsh7th/cmp-buffer" },
-    { "hrsh7th/cmp-path" },
-    { "hrsh7th/cmp-nvim-lsp" },
-    { "hrsh7th/cmp-nvim-lua" },
 
     -- Neodev
     { "folke/neodev.nvim" },
-
-    -- Dap
-    { "jay-babu/mason-nvim-dap.nvim" },
 
     -- Lint
     { "mfussenegger/nvim-lint" },
@@ -33,7 +22,6 @@ local ensure_installed = {
   'html',
   'jsonls',
   'lua_ls',
-  'marksman',
   'tailwindcss',
   'tsserver',
   'vimls',
@@ -137,13 +125,6 @@ M.config = function()
       ["lua_ls"] = lua_setup,
       ["eslint"] = eslint_setup
     },
-  })
-
-  require("mason-nvim-dap").setup({
-    ensure_installed = {
-      "js",
-    },
-    automatic_installation = false
   })
 
   vim.opt.completeopt = { 'menu', 'menuone', 'noselect' }
