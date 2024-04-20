@@ -129,53 +129,12 @@ M.config = function()
 
   vim.opt.completeopt = { 'menu', 'menuone', 'noselect' }
 
-  local cmp = require("cmp")
-  local cmp_select = { behavior = cmp.SelectBehavior.Select }
-  cmp.setup({
-    sources = {
-      { name = 'path' },
-      { name = 'nvim_lsp', keyword_length = 1 },
-      { name = 'buffer',   keyword_length = 3 },
-    },
-    mapping = cmp.mapping.preset.insert({
-      ["<C-p>"] = cmp.mapping.select_prev_item(cmp_select),
-      ["<C-n>"] = cmp.mapping.select_next_item(cmp_select),
-      ["<CR>"] = cmp.mapping.confirm({ select = true }),
-      ["<Tab>"] = nil,
-      ["<S-Tab>"] = nil,
-      ["<C-space>"] = cmp.mapping({
-        i = function()
-          if cmp.visible() then
-            cmp.abort()
-          else
-            cmp.complete()
-          end
-        end,
-        c = function()
-          if cmp.visible() then
-            cmp.close()
-          else
-            cmp.complete()
-          end
-        end,
-      }),
-    }),
-    snippet = {
-      expand = function(args)
-        require("luasnip").lsp_expand(args.body)
-      end,
-    },
-    window = {
-      documentation = cmp.config.window.bordered()
-    }
-  })
-
   -- Dadbod stuff
   local autocomplete_group = vim.api.nvim_create_augroup('vimrc_autocompletion', { clear = true })
   vim.api.nvim_create_autocmd('FileType', {
     pattern = { 'sql', 'mysql', 'plsql' },
     callback = function()
-      cmp.setup.buffer({
+      require'cmp'.setup.buffer({
         sources = {
           { name = 'vim-dadbod-completion' },
           { name = 'buffer' }
