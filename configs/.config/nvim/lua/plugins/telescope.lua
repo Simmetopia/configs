@@ -32,9 +32,78 @@ M.config = function()
   vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
   vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
-  vim.keymap.set('n', '<leader>sn', function()
+  local function browse_config  ()
     builtin.find_files { cwd = vim.fn.stdpath 'config' }
-  end, { desc = '[S]earch [N]eovim files' })
+  end
+
+  vim.keymap.set('n', '<leader>sn', browse_config, { desc = '[S]earch [N]eovim files' })
+
+
+  -- Optional: Register the command, if you want it to be callable as :Telescope zoxide
+  vim.api.nvim_create_user_command("TelescopeConfig", browse_config, {})
+
+  local action_state = require('telescope.actions.state')
+
+  -- Function to get zoxide results as table
+  local function get_zoxide_list()
+    local handle = io.popen("zoxide query -ls")
+    if not handle then
+      print("Failed to execute zoxide")
+      return {}
+    end
+    local result = handle:read("*a")
+    handle:close()
+
+    if not result then
+      print("No results from zoxide")
+      return {}
+    end
+
+    local paths = {}
+    for score, path in string.gmatch(result, "(%S+) (%S+)") do
+      if tonumber(score) >= 2 then
+        table.insert(paths, path)
+      end
+    end
+    return paths
+  end
+
+  -- Telescope picker for zoxide results
+  local function zoxide_picker()
+    local pickers = require("telescope.pickers")
+    local finders = require("telescope.finders")
+    local conf = require("telescope.config").values
+
+    pickers.new({}, {
+      prompt_title = "Zoxide Directories",
+      finder = finders.new_table({
+        results = get_zoxide_list(),
+        entry_maker = function(entry)
+          return {
+            value = entry,
+            display = entry,
+            ordinal = entry,
+          }
+        end
+      }),
+      sorter = conf.generic_sorter({}),
+      attach_mappings = function(prompt_bufnr, map)
+        actions.select_default:replace(function()
+          actions.close(prompt_bufnr)
+          local selection = action_state.get_selected_entry()
+          vim.cmd("cd " .. selection.value)
+          vim.cmd("Telescope find_files")
+        end)
+        return true
+      end
+    }):find()
+  end
+
+  -- Optional: Register the command, if you want it to be callable as :Telescope zoxide
+  vim.api.nvim_create_user_command("TelescopeZoxide", zoxide_picker, {})
+
+  -- Optional: Map to a leader key combination
+  vim.keymap.set('n', '<leader>pp', zoxide_picker, { desc = '[S]earch Zoxide Directories' })
 end
 
 return M
