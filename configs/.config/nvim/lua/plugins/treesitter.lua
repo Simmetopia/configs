@@ -3,21 +3,26 @@ local M = {
   event = { "BufReadPost", "BufNewFile" },
   version = false,
   build = ":TSUpdate",
-  opts = {
-    ensure_installed = "all", -- one of "all", "maintained" (parsers with maintainers), or a list of languages
-    highlight = {
-      enable = true,        -- false will disable the whole extension
-    },
-    incremental_selection = {
-      enable = true,
-      keymaps = {
-        init_selection = "gnn",
-        node_incremental = "grn",
-        scope_incremental = "grc",
-        node_decremental = "grm",
-      },
-    },
+  dependencies = {
+    "rescript-lang/tree-sitter-rescript"
   },
+  opts = function()
+    return {
+      ensure_installed = "all", -- one of "all", "maintained" (parsers with maintainers), or a list of languages
+      highlight = {
+        enable = true,          -- false will disable the whole extension
+      },
+      incremental_selection = {
+        enable = true,
+        keymaps = {
+          init_selection = "gnn",
+          node_incremental = "grn",
+          scope_incremental = "grc",
+          node_decremental = "grm",
+        },
+      },
+    }
+  end,
 
   ---@param opts TSConfig
   config = function(_, opts)

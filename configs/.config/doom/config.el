@@ -3,12 +3,12 @@
 (setq user-full-name "Simon Bundgaard Egeberg"
       user-mail-address "simon@bundgaard-egeberg.dk")
 
-(setq doom-theme 'doom-horizon)
+(setq doom-theme 'doom-nord)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
 (setq display-line-numbers-type 'relative)
-(add-to-list 'load-path "/usr/share/emacs/site-lisp/mu4e")
+;; (add-to-list 'load-path "/usr/share/emacs/site-lisp/mu4e")
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
@@ -19,8 +19,7 @@
 (setq org-agenda-files '("~/org-roam"
                          "~/org-roam/daily/"))
 
-(setq doom-font "JetBrains Mono Nerd Font")
-(setq auth-sources '("~/.authinfo.gpg"))
+(setq doom-font (font-spec :family "FiraCode Nerd Font" :size 16))
 
 (defun my/org-roam-filter-by-tag (tag-name)
   (lambda (node)
@@ -32,41 +31,41 @@
            (my/org-roam-filter-by-tag tag-name)
            (org-roam-node-list))))
 
-(defun my/org-roam-refresh-agenda-list ()
-  (interactive)
-  (setq org-agenda-files (my/org-roam-list-notes-by-tag "agenda")))
-(my/org-roam-refresh-agenda-list)
+;; (defun my/org-roam-refresh-agenda-list ()
+;;   (interactive)
+;;   (setq org-agenda-files (my/org-roam-list-notes-by-tag "agenda")))
+;; (my/org-roam-refresh-agenda-list)
 
-(defun my/org-roam-project-finalize-hook ()
-  "Adds the captured project file to `org-agenda-files' if the
-capture was not aborted."
-  ;; Remove the hook since it was added temporarily
-  (remove-hook 'org-capture-after-finalize-hook #'my/org-roam-project-finalize-hook)
+;; (defun my/org-roam-project-finalize-hook ()
+;;   "Adds the captured project file to `org-agenda-files' if the
+;; capture was not aborted."
+;;   ;; Remove the hook since it was added temporarily
+;;   (remove-hook 'org-capture-after-finalize-hook #'my/org-roam-project-finalize-hook)
 
-  ;; Add project file to the agenda list if the capture was confirmed
-  (unless org-note-abort
-    (with-current-buffer (org-capture-get :buffer)
-      (add-to-list 'org-agenda-files (buffer-file-name)))))
+;;   ;; Add project file to the agenda list if the capture was confirmed
+;;   (unless org-note-abort
+;;     (with-current-buffer (org-capture-get :buffer)
+;;       (add-to-list 'org-agenda-files (buffer-file-name)))))
 
-(defun my/org-roam-find-project ()
-  (interactive)
-  ;; Add the project file to the agenda after capture is finished
-  (add-hook 'org-capture-after-finalize-hook #'my/org-roam-project-finalize-hook)
+;; (defun my/org-roam-find-project ()
+;;   (interactive)
+;;   ;; Add the project file to the agenda after capture is finished
+;;   (add-hook 'org-capture-after-finalize-hook #'my/org-roam-project-finalize-hook)
 
-  ;; Select a project file to open, creating it if necessary
-  (org-roam-node-find
-   nil
-   nil
-   (my/org-roam-filter-by-tag "agenda")
-   :templates
-   '(("p" "project" plain "* Goals\n\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Dates\n\n"
-      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+category: ${title}\n#+filetags: agenda")
-      :unnarrowed t))))
+;;   ;; Select a project file to open, creating it if necessary
+;;   (org-roam-node-find
+;;    nil
+;;    nil
+;;    (my/org-roam-filter-by-tag "agenda")
+;;    :templates
+;;    '(("p" "project" plain "* Goals\n\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Dates\n\n"
+;;       :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+category: ${title}\n#+filetags: agenda")
+;;       :unnarrowed t))))
 
-(use-package! copilot
-  :hook (prog-mode . copilot-mode)
-  :bind (:map copilot-completion-map
-              ("<tab>" . 'copilot-accept-completion)
-              ("TAB" . 'copilot-accept-completion)
-              ("C-TAB" . 'copilot-accept-completion-by-word)
-              ("C-<tab>" . 'copilot-accept-completion-by-word)))
+;; (use-package! copilot
+;;   :hook (prog-mode . copilot-mode)
+;;   :bind (:map copilot-completion-map
+;;               ("<tab>" . 'copilot-accept-completion)
+;;               ("TAB" . 'copilot-accept-completion)
+;;               ("C-TAB" . 'copilot-accept-completion-by-word)
+;;               ("C-<tab>" . 'copilot-accept-completion-by-word)))

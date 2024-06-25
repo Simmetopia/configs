@@ -1,12 +1,11 @@
 [tools]
-# global tool versions go here
-# you can set these with `mise use -g`
-node = 'lts'
+node = "22.0.0"
 python = "3.10.11"
-erlang = "26.2.1"
+erlang = "26.2.4"
 lazygit = "latest"
 azure-cli = "latest"
 kubeseal = "latest"
+usage = "latest"
 
 [settings]
 # plugins can read the versions files used by other version managers (if enabled by the plugin)

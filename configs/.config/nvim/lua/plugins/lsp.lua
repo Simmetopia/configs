@@ -90,6 +90,19 @@ M.config = function()
     })
   end
 
+  local tailwindcss_setup = function()
+    lspconfig.tailwindcss.setup({
+      on_attach = on_attach,
+      init_options = {
+        userLanguages = {
+          elixir = "html-eex",
+          eelixir = "html-eex",
+          heex = "html-eex",
+        },
+      },
+    })
+  end
+
 
   local eslint_setup = function()
     lspconfig.eslint.setup({
@@ -123,6 +136,7 @@ M.config = function()
     handlers = {
       default_setup,
       ["lua_ls"] = lua_setup,
+      ["tailwindcss"] = tailwindcss_setup,
       ["eslint"] = eslint_setup
     },
   })

@@ -5,7 +5,7 @@ local config = {}
 
 config.enable_wayland = false
 
-config.color_scheme = 'Catppuccin Mocha'
+config.color_scheme = 'Kanagawa Dragon (Gogh)'
 config.font = wezterm.font 'FiraCode Nerd Font'
 
 wezterm.on('mux-startup', function()
