@@ -7,6 +7,7 @@ local M =
     local elixirls = require("elixir.elixirls")
 
     elixir.setup {
+      credo = { enable = false },
       elixirls = {
         enable = true,
         cmd = "/home/simmetopia/tmp/elixir-lsp-release/language_server.sh",

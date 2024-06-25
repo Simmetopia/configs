@@ -6,7 +6,8 @@ local M = {
     -- refer to the configuration section below
     tmux     = { enabled = true },
     twilight = { enabled = true }
-  }
+  },
+  config = true
 }
 -- return the module
 return M
