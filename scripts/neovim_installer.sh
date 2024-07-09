@@ -1,4 +1,5 @@
 #!/bin/bash
+
 cd ~
 sudo rm -r neovim
 git clone https://github.com/neovim/neovim

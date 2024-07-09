@@ -1,6 +1,6 @@
 function prcheck
-cd src
 mix deps.get
 mix format
+mix compile --warnings-as-errors
 mix test
 end
