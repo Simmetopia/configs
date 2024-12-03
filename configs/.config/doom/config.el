@@ -13,11 +13,11 @@
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
 ;;
-(setq org-directory "~/org-roam/")
-(setq org-roam-directory "~/org-roam/")
+(setq org-directory "~/obs-vault/")
+(setq org-roam-directory "~/obs-vault/")
 (setq org-roam-graph-viewer "/usr/bin/microsoft-edge")
-(setq org-agenda-files '("~/org-roam"
-                         "~/org-roam/daily/"))
+(setq org-agenda-files '("~/obs-vault"
+                         "~/obs-vault/daily/"))
 
 (setq doom-font (font-spec :family "FiraCode Nerd Font" :size 16))
 
@@ -31,41 +31,29 @@
            (my/org-roam-filter-by-tag tag-name)
            (org-roam-node-list))))
 
-;; (defun my/org-roam-refresh-agenda-list ()
-;;   (interactive)
-;;   (setq org-agenda-files (my/org-roam-list-notes-by-tag "agenda")))
-;; (my/org-roam-refresh-agenda-list)
+(defun my-open-agenda-and-roam-dailies ()
+  "Open the weekly Org agenda below, with today's and yesterday's Org-roam daily notes side by side above."
+  (interactive)
+  ;; Start with a clean window layout
+  (delete-other-windows)
+  ;; Split the window horizontally into upper and lower panes
+  (let* ((upper-window (selected-window))
+         (lower-window (split-window upper-window nil 'below)))
+    ;; Now split the upper window vertically
+    (let ((upper-left-window upper-window)
+          (upper-right-window (split-window upper-window nil 'right)))
+      ;; Open today's Org-roam daily note in the upper-left window
+      (with-selected-window upper-left-window
+        (org-roam-dailies-goto-today))
+      ;; Open yesterday's Org-roam daily note in the upper-right window
+      (with-selected-window upper-right-window
+        (org-roam-dailies-goto-yesterday))
+      ;; Open the weekly Org agenda in the lower window
+      (with-selected-window lower-window
+        (org-agenda-list nil nil 'week))
+      ;; Optional: Return focus to the upper-left window
+      (select-window upper-left-window))))
 
-;; (defun my/org-roam-project-finalize-hook ()
-;;   "Adds the captured project file to `org-agenda-files' if the
-;; capture was not aborted."
-;;   ;; Remove the hook since it was added temporarily
-;;   (remove-hook 'org-capture-after-finalize-hook #'my/org-roam-project-finalize-hook)
-
-;;   ;; Add project file to the agenda list if the capture was confirmed
-;;   (unless org-note-abort
-;;     (with-current-buffer (org-capture-get :buffer)
-;;       (add-to-list 'org-agenda-files (buffer-file-name)))))
-
-;; (defun my/org-roam-find-project ()
-;;   (interactive)
-;;   ;; Add the project file to the agenda after capture is finished
-;;   (add-hook 'org-capture-after-finalize-hook #'my/org-roam-project-finalize-hook)
-
-;;   ;; Select a project file to open, creating it if necessary
-;;   (org-roam-node-find
-;;    nil
-;;    nil
-;;    (my/org-roam-filter-by-tag "agenda")
-;;    :templates
-;;    '(("p" "project" plain "* Goals\n\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Dates\n\n"
-;;       :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+category: ${title}\n#+filetags: agenda")
-;;       :unnarrowed t))))
-
-;; (use-package! copilot
-;;   :hook (prog-mode . copilot-mode)
-;;   :bind (:map copilot-completion-map
-;;               ("<tab>" . 'copilot-accept-completion)
-;;               ("TAB" . 'copilot-accept-completion)
-;;               ("C-TAB" . 'copilot-accept-completion-by-word)
-;;               ("C-<tab>" . 'copilot-accept-completion-by-word)))
+(map! :leader
+      :desc "Open agenda and roam dailies"
+      "d d" #'my-open-agenda-and-roam-dailies)

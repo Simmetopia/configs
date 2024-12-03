@@ -2,8 +2,8 @@
 function pinit
   mix deps.get
   mix deps.compile
-  cd assets
-  yarn
-  cd ..
+  cd apps/oceanconnect_web/assets
+  npm install
+  cd -
   nvim
 end

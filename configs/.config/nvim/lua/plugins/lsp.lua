@@ -1,4 +1,4 @@
----@diagnostic disable: missing-fields
+---@diagnostic disable: missing-fieldslsp
 local M = {
   "neovim/nvim-lspconfig",
   lazy = false,
@@ -22,8 +22,7 @@ local ensure_installed = {
   'html',
   'jsonls',
   'lua_ls',
-  'tailwindcss',
-  'tsserver',
+  'ts_ls',
   'vimls',
   'yamlls'
 }
@@ -43,9 +42,6 @@ M.config = function()
 
     vim.keymap.set("n", "gd", function()
       vim.lsp.buf.definition()
-    end, opts)
-    vim.keymap.set("n", "<leader>f", function()
-      vim.lsp.buf.format()
     end, opts)
     vim.keymap.set("n", "K", function()
       vim.lsp.buf.hover()
@@ -116,16 +112,6 @@ M.config = function()
       },
       on_attach = function(client, bufnr)
         client.server_capabilities.documentFormattingProvider = true
-        if client.server_capabilities.documentFormattingProvider then
-          local au_lsp = vim.api.nvim_create_augroup("eslint_lsp", { clear = true })
-          vim.api.nvim_create_autocmd("BufWritePre", {
-            pattern = "*",
-            callback = function()
-              vim.lsp.buf.format({ async = false })
-            end,
-            group = au_lsp,
-          })
-        end
       end
     })
   end
@@ -148,7 +134,7 @@ M.config = function()
   vim.api.nvim_create_autocmd('FileType', {
     pattern = { 'sql', 'mysql', 'plsql' },
     callback = function()
-      require'cmp'.setup.buffer({
+      require 'cmp'.setup.buffer({
         sources = {
           { name = 'vim-dadbod-completion' },
           { name = 'buffer' }

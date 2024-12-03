@@ -19,7 +19,7 @@ vim.g.maplocalleader = " "
 
 require("lazy").setup({
   { import = "plugins" },
-  "github/copilot.vim",
+  -- "github/copilot.vim",
 }, {
   lazy = true,
   checker = {
