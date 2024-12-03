@@ -42,23 +42,10 @@ do
   end)
 end
 
--- Autostart windowless processes
-local function run_once(cmd_arr)
-  for _, cmd in ipairs(cmd_arr) do
-    findme = cmd
-    firstspace = cmd:find(" ")
-    if firstspace then
-      findme = cmd:sub(0, firstspace - 1)
-    end
-    awful.spawn.with_shell(string.format("pgrep -u $USER -x %s > /dev/null || (%s)", findme, cmd))
-  end
-end
--- Autostart programs
-run_once({ "~/.screenlayout/default.sh" })
-run_once({ "kbdd" })
-run_once({ "perwindowlayoutd" })
-run_once({ "nm-applet -sm-disable" })
-run_once({ "compton" })
+awful.spawn.once("kbdd")
+awful.spawn.once("perwindowlayoutd")
+awful.spawn.once("cerebro")
+
 
 -- Variable definitions
 local themes = {
@@ -100,17 +87,18 @@ naughty.config.defaults.hover_timeout = nil
 awful.util.terminal = terminal
 awful.util.tagnames = { " </> ", " >_ ", " web ", " & ", " etc ", " # " }
 awful.layout.layouts = {
+  require("themes.darkblue.super-wide-split"),
   awful.layout.suit.tile,
-  awful.layout.suit.floating,
-  awful.layout.suit.max,
   lain.layout.centerwork,
-  awful.layout.suit.spiral,
-  awful.layout.suit.magnifier,
-  awful.layout.suit.fair,
+  -- awful.layout.suit.floating,
+  -- awful.layout.suit.max,
+  -- awful.layout.suit.spiral,
+  -- awful.layout.suit.magnifier,
+  -- awful.layout.suit.fair,
   --awful.layout.suit.tile.bottom,
-  --awful.layout.suit.tile.left,
+  -- awful.layout.suit.tile.left,
   --awful.layout.suit.tile.top,
-  --awful.layout.suit.fair.horizontal,
+  -- awful.layout.suit.fair.horizontal,
   --awful.layout.suit.spiral.dwindle,
   --awful.layout.suit.max.fullscreen,
   --awful.layout.suit.corner.nw,
@@ -526,9 +514,6 @@ globalkeys = awful.util.table.join(
   --           {description = "run gui editor", group = "launcher"}),
 
   -- Prompt
-  awful.key({ altkey }, "F1", function()
-    awful.util.spawn(dmenu_settings)
-  end),
   awful.key({ altkey }, "F2", function()
     awful.util.spawn(rofi_settings)
   end),
