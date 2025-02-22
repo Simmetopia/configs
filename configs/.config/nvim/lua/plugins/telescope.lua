@@ -32,7 +32,7 @@ M.config = function()
   vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
   vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
-  local function browse_config  ()
+  local function browse_config()
     builtin.find_files { cwd = vim.fn.stdpath 'config' }
   end
 
