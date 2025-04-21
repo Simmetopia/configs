@@ -53,5 +53,9 @@
 (package! tree-sitter-langs)
 (package! codeium :recipe (:host github :repo "Exafunction/codeium.el"))
 
-(package! copilot
-  :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")))
+(package! ws-butler
+  :recipe (:host github
+           :repo "emacsmirror/nongnu_elpa"
+           :branch "elpa/ws-butler"
+           :local-repo "ws-butler")
+  :pin "9ee5a7657a22e836618813c2e2b64a548d27d2ff")
