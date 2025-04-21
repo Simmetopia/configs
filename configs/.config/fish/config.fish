@@ -1,4 +1,4 @@
-eval "~/.local/bin/mise activate fish | source" 
+eval "/usr/bin/mise activate fish | source" 
 
 source ~/.config/fish/aliases.fish
 op completion fish | source
@@ -25,13 +25,7 @@ set -g FLYCTL_INSTALL "$HOME/.fly"
 set -gx DOTNET_ROOT (mise where dotnet)
 set -gx DOTNET_CLI_TELEMETRY_OPTOUT 1
 
-/home/simmetopia/.local/share/mise/installs/zoxide/latest/bin/zoxide init fish | source
-eval 'mise completion fish' | source
-
-# >>> coursier install directory >>>
-set -gx PATH "$PATH:/home/simmetopia/.local/share/coursier/bin"
-# <<< coursier install directory <<<
-
+/home/simmetopia/.local/share/mise/installs/zoxide/latest/zoxide init fish | source
 
 # BEGIN opam configuration
 # This is useful if you're using opam as it adds:

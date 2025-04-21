@@ -8,6 +8,7 @@ local window_frame = require 'window_frame'
 config.enable_wayland = false
 
 config.color_scheme = 'Kasugano (terminal.sexy)'
+-- config.color_scheme = 'Atelier Dune Light (base16)'
 config.font = wezterm.font 'FiraCode Nerd Font'
 
 wezterm.on('mux-startup', function()
