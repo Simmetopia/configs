@@ -11,7 +11,7 @@ local function cd_to_git_root()
   vim.fn.chdir(git_root)
 
   -- Print a message to the user
-  vim.api.nvim_out_write(string.format("Changed directory to %s\n", git_root))
+  vim.api.nvim_echo({{string.format("Changed directory to %s", git_root), "Normal"}}, true, {})
 end
 
 local M = {

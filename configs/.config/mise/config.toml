@@ -17,6 +17,9 @@ sqlite = "latest"
 awscli = "latest"
 cmake = "latest"
 flyctl = "latest"
+maven = "latest"
+java = "temurin-18"
+php = "8.4"
 
 [settings]
 # plugins can read the versions files used by other version managers (if enabled by the plugin)

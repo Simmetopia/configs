@@ -1,4 +1,4 @@
-eval "/usr/bin/mise activate fish | source" 
+eval "/usr/bin/mise activate fish | source"
 
 source ~/.config/fish/aliases.fish
 op completion fish | source
@@ -13,6 +13,7 @@ source ~/.config/fish/alacritty_completions.fish
 
 # Meta
 set -g fish_user_paths "/usr/local/sbin" $fish_user_paths
+set -g fish_user_paths "$HOME/.local/share/npm/bin" $fish_user_paths
 set -g fish_user_paths "$HOME/.local/share/bob/nvim-bin" $fish_user_paths
 set -g fish_user_paths "$HOME/.config/composer/vendor/bin/" $fish_user_paths
 set -g fish_user_paths "$HOME/.fly/bin/" $fish_user_paths

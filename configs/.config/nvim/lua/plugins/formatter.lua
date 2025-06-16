@@ -15,9 +15,6 @@ M.config = function()
       cs = {
         require("formatter.filetypes.cs").csharpier(),
       },
-      javascript = {
-        require("formatter.filetypes.javascript").eslint_d(),
-      },
       ["*"] = {
         require("formatter.filetypes.any").remove_trailing_whitespace,
         function()
