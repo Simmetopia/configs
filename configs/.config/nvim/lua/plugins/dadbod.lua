@@ -10,6 +10,7 @@ return {
       ft = { 'sql', 'mysql', 'plsql' },
       lazy = true
     },
+    'tpope/vim-dotenv',
   },
   cmd = {
     'DBUI',
