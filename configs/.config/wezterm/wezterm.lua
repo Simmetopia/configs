@@ -5,15 +5,13 @@ local config = {}
 local keybinds = require 'keybinds'
 local window_frame = require 'window_frame'
 
-config.enable_wayland = false
+config.enable_wayland = true
 
 config.color_scheme = 'Kasugano (terminal.sexy)'
 -- config.color_scheme = 'Atelier Dune Light (base16)'
 config.font = wezterm.font 'FiraCode Nerd Font'
 
 wezterm.on('mux-startup', function()
-  local tab, pane, window = mux.spawn_window {}
-  pane:split { direction = 'Top' }
 end)
 
 config.unix_domains = {
@@ -52,10 +50,10 @@ end)
 
 window_frame.set_window_frame(config)
 config.window_padding = {
-  left = 0,
-  right = 0,
+  left = 8,
+  right = 8,
   top = 0,
-  bottom = 0
+  bottom = 8
 }
 
 return config
