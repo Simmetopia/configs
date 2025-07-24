@@ -23,6 +23,7 @@ M.config = function()
       vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
       vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
       vim.keymap.set("n", "<leader>vd", vim.diagnostic.open_float, opts)
+      vim.keymap.set("n", "<leader>vrr", vim.lsp.buf.references, opts)
       vim.keymap.set("n", "[d", function()
         vim.diagnostic.jump({ count = 1, float = true })
       end, opts)
@@ -38,7 +39,6 @@ M.config = function()
   -- Mason setup
   require("mason").setup({})
   require("mason-lspconfig").setup()
-
 end
 
 return M
