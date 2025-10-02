@@ -2,7 +2,7 @@
 (setq user-full-name "Simon Bundgaard Egeberg"
       user-mail-address "simon@bundgaard-egeberg.dk")
 
-(setq doom-theme 'doom-one)
+(setq doom-theme 'doom-nord)
 
 ;; import files in capture-templates
 (load "~/.config/doom/capture-templates/00-all-templates")
@@ -20,7 +20,7 @@
 (setq org-agenda-files '("~/obs-vault"
                          "~/obs-vault/daily/"))
 
-(setq doom-font (font-spec :family "FiraCode Nerd Font" :size 16))
+(setq doom-font (font-spec :family "FiraMonoNerdFont" :size 16))
 
 (defun my/org-roam-filter-by-tag (tag-name)
   (lambda (node)

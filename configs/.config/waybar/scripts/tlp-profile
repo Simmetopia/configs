@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROFILE="${1:-}"
+BASE="${HOME}/.config/tlp-profiles"
+SRC="${BASE}/${PROFILE}.conf"
+DST="/etc/tlp.d/00-active.conf"
+STATE="${HOME}/.local/state/tlp-profile"
+
+if [[ -z "${PROFILE}" ]]; then
+  echo "usage: $(basename "$0") <full|quiet|battery>" >&2
+  exit 2
+fi
+
+if [[ ! -f "$SRC" ]]; then
+  echo "Profile '$PROFILE' not found at $SRC" >&2
+  exit 1
+fi
+
+mkdir -p "$STATE"
+
+# Copy profile into place and restart TLP (needs sudo)
+sudo install -D -m 0644 "$SRC" "$DST"
+sudo tlp start
+
+# Record current profile for Waybar to read without sudo
+echo "$PROFILE" > "${STATE}/current"
+
+echo "Switched TLP profile to: $PROFILE"
+
