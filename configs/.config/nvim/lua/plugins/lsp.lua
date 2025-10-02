@@ -9,6 +9,7 @@ local M = {
 }
 
 M.config = function()
+
   vim.api.nvim_create_autocmd('LspAttach', {
     desc = 'LSP actions',
     callback = function(args)
@@ -38,6 +39,7 @@ M.config = function()
 
   -- Mason setup
   require("mason").setup({})
+
   require("mason-lspconfig").setup()
 end
 

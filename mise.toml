@@ -1,0 +1,5 @@
+[tools]
+dotnet = "9"
+rust = "latest"
+usage = "latest"
+zoxide = "latest"
