@@ -1,18 +1,20 @@
 [tools]
 databricks-cli = "latest"
-dotnet = "9"
 elixir = "latest"
 erlang = "latest"
 go = "latest"
 gradle = "8"
 java = "21"
 lazygit = "latest"
+luajit = "latest"
 maven = "latest"
 node = "latest"
 python = "3.10"
-rust = "stable"
+rust = "latest"
 usage = "latest"
 zoxide = "latest"
+lua = "latest"
+opam = "latest"
 
 [settings]
 # plugins can read the versions files used by other version managers (if enabled by the plugin)
