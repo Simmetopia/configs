@@ -1,43 +1,29 @@
-eval "/home/simmetopia/.local/bin/mise activate fish | source"
+fish_add_path ~/.local/share/mise/shims
+
+if status is-interactive
+  mise activate fish | source
+  op completion fish | source
+  starship init fish | source
+  /home/simmetopia/.local/share/mise/installs/zoxide/latest/zoxide init fish | source
+  eval (scw autocomplete script shell=fish)
+end
 
 source ~/.config/fish/aliases.fish
-op completion fish | source
-
-set -gx EDITOR nvim
-set -gx VISUAL nvim
-
-starship init fish | source
-
 source ~/.config/fish/nnn_completion.fish
 source ~/.config/fish/alacritty_completions.fish
 
 # Meta
-set -gx fish_user_paths "/usr/local/sbin" $fish_user_paths
-set -gx fish_user_paths "$HOME/.local/share/npm/bin" $fish_user_paths
-set -gx fish_user_paths "$HOME/.local/share/bob/nvim-bin" $fish_user_paths
-set -gx fish_user_paths "$HOME/.config/composer/vendor/bin/" $fish_user_paths
-set -gx fish_user_paths "$HOME/.fly/bin/" $fish_user_paths
-set -gx fish_user_paths "$HOME/.local/bin" $fish_user_paths
-set -gx fish_user_paths "$HOME/.dotnet" $fish_user_paths
-set -gx fish_user_paths "$HOME/.dotnet/tools" $fish_user_paths
-set -gx ERL_AFLAGS "-kernel shell_history enabled"
+set -gx ERL_AFLAGset -gx fish_user_paths \
+    /usr/local/sbin \
+    $HOME/.local/share/npm/bin \
+    $HOME/.local/share/bob/nvim-bin \
+    $HOME/.config/composer/vendor/bin \
+    $HOME/.fly/bin \
+    $HOME/.local/bin \
+    $HOME/.dotnet \
+    $HOME/.dotnet/tools
 
 set -gx FLYCTL_INSTALL "$HOME/.fly"
 set -gx DOTNET_ROOT "$HOME/.dotnet"
-
-/home/simmetopia/.local/share/mise/installs/zoxide/latest/zoxide init fish | source
-
-# BEGIN opam configuration
-# This is useful if you're using opam as it adds:
-#   - the correct directories to the PATH
-#   - auto-completion for the opam binary
-# This section can be safely removed at any time if needed.
-test -r '/home/simmetopia/.opam/opam-init/init.fish' && source '/home/simmetopia/.opam/opam-init/init.fish' > /dev/null 2> /dev/null; or true
-# END opam configuration
-
-# pnpm
-set -gx PNPM_HOME "/home/simmetopia/.local/share/pnpm"
-if not string match -q -- $PNPM_HOME $PATH
-  set -gx PATH "$PNPM_HOME" $PATH
-end
-# pnpm end
+set -gx EDITOR nvim
+set -gx VISUAL nvim

@@ -5,6 +5,7 @@ function tlp-profile
     switch "$argv[1]"
         case quiet battery
             sudo cp "$profile_dir/$argv[1].conf" $tlp_conf
+            and sudo tlp start
             and sudo tlp power-saver
             and echo "Switched to $argv[1] profile"
         case full
