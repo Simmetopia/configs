@@ -3,4 +3,4 @@
 SETUVAR __fish_init_2_3_0:\x1d
 SETUVAR __fish_initialized:4300
 SETUVAR fish_greeting:Welcome\x20to\x20fish\x2c\x20the\x20friendly\x20interactive\x20shell
-SETUVAR fish_user_paths:/home/Simmetopia/\x2edotnet/tools/\x1e/home/Simmetopia/\x2econfig/composer/vendor/bin/\x1e/usr/local/sbin\x1e/Users/dk8simbu/\x2efzf/bin\x1e/home/simmetopia/\x2efzf/bin\x1e/home/Simmetopia/\x2efzf/bin
+SETUVAR fish_user_paths:/home/simmetopia/\x2elocal/share/mise/shims\x1e/home/Simmetopia/\x2edotnet/tools/\x1e/home/Simmetopia/\x2econfig/composer/vendor/bin/\x1e/usr/local/sbin\x1e/Users/dk8simbu/\x2efzf/bin\x1e/home/simmetopia/\x2efzf/bin\x1e/home/Simmetopia/\x2efzf/bin
