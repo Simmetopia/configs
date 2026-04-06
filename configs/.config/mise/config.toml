@@ -1,14 +1,20 @@
 [tools]
-dotnet = "9"
+databricks-cli = "latest"
+elixir = "latest"
+erlang = "latest"
+go = "latest"
 gradle = "8"
 java = "21"
 lazygit = "latest"
+luajit = "latest"
 maven = "latest"
 node = "latest"
 python = "3.10"
-rust = "stable"
+rust = "latest"
 usage = "latest"
 zoxide = "latest"
+lua = "latest"
+opam = "latest"
 
 [settings]
 # plugins can read the versions files used by other version managers (if enabled by the plugin)
@@ -36,6 +42,7 @@ task_output = "prefix" # see Task Runner for more information
 paranoid = false       # see MISE_PARANOID
 
 experimental = true # enable experimental features
+idiomatic_version_file_enable_tools = ["python"]
 
 # configure messages displayed when entering directories with config files
 [settings.status]
