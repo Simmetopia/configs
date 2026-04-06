@@ -10,6 +10,7 @@ config.enable_wayland = true
 config.color_scheme = 'Kasugano (terminal.sexy)'
 -- config.color_scheme = 'Atelier Dune Light (base16)'
 config.font = wezterm.font 'FiraCode Nerd Font'
+config.font_size = 18.0
 
 wezterm.on('mux-startup', function()
 end)
