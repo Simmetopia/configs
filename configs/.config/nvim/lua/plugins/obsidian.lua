@@ -1,12 +1,13 @@
 local M = {
   "epwalsh/obsidian.nvim",
-  dependencies = {
-    "preservim/vim-markdown",
-    "godlygeek/tabular",
+    dependencies = {
+    -- Required.
     "nvim-lua/plenary.nvim",
+
+    -- see below for full list of optional dependencies 👇
   },
   opts = {
-    dir = "~/vault/",
+    dir = "~/Documents/vaultish/",
     completion = {
       nvim_cmp = true, -- if using nvim-cmp, otherwise set to false
     },
