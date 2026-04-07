@@ -69,16 +69,16 @@ vim.api.nvim_create_user_command("PickConfig", function()
 end, {})
 
 -- Starter
-local starter = require('mini.starter')
-starter.setup({
-  items = {
-    { name = 'Update plugins', action = 'lua vim.pack.update()', section = 'Actions' },
-    { name = 'Find file', action = function() pick.builtin.files() end, section = 'Actions' },
-    { name = 'Find project', action = function() require('zoxide_picker').zoxide_picker() end, section = 'Actions' },
-    { name = 'Dotfiles', action = function()
-      vim.cmd('cd ' .. vim.fn.stdpath('config'))
-      pick.builtin.files()
-    end, section = 'Actions' },
-    starter.sections.recent_files(5, false),
-  },
-})
+-- local starter = require('mini.starter')
+-- starter.setup({
+--   items = {
+--     { name = 'Update plugins', action = 'lua vim.pack.update()', section = 'Actions' },
+--     { name = 'Find file', action = function() pick.builtin.files() end, section = 'Actions' },
+--     { name = 'Find project', action = function() require('zoxide_picker').zoxide_picker() end, section = 'Actions' },
+--     { name = 'Dotfiles', action = function()
+--       vim.cmd('cd ' .. vim.fn.stdpath('config'))
+--       pick.builtin.files()
+--     end, section = 'Actions' },
+--     starter.sections.recent_files(5, false),
+--   },
+-- })
