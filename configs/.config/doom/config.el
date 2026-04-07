@@ -20,7 +20,7 @@
 (setq org-agenda-files '("~/obs-vault"
                          "~/obs-vault/daily/"))
 
-(setq doom-font (font-spec :family "FiraMonoNerdFont" :size 16))
+(setq doom-font (font-spec :family "FiraCode Nerd Font" :size 16))
 
 (defun my/org-roam-filter-by-tag (tag-name)
   (lambda (node)
@@ -37,41 +37,7 @@
 
 ;; (add-hook 'org-mode-hook #'enable-auto-save-for-org)
 
-(use-package! codeium
-  :init
-  ;; Add Codeium to completion-at-point-functions
-  (add-to-list 'completion-at-point-functions #'codeium-completion-at-point)
-  
-  :config
-  (setq use-dialog-box nil) ;; do not use popup boxes
-
-  ;; get codeium status in the modeline
-  (setq codeium-mode-line-enable
-        (lambda (api) (not (memq api '(CancelRequest Heartbeat AcceptCompletion)))))
-  (add-to-list 'mode-line-format '(:eval (car-safe codeium-mode-line)) t)
-
-  ;; use M-x codeium-diagnose to see apis/fields that would be sent to the local language server
-  (setq codeium-api-enabled
-        (lambda (api)
-          (memq api '(GetCompletions Heartbeat CancelRequest GetAuthToken RegisterUser auth-redirect AcceptCompletion))))
-
-  ;; Limit the string sent to codeium for better performance
-  (defun my-codeium/document/text ()
-    (buffer-substring-no-properties (max (- (point) 3000) (point-min)) (min (+ (point) 1000) (point-max))))
-  
-  ;; Update cursor offset calculation
-  (defun my-codeium/document/cursor_offset ()
-    (codeium-utf8-byte-length
-     (buffer-substring-no-properties (max (- (point) 3000) (point-min)) (point))))
-
-  (setq codeium/document/text 'my-codeium/document/text)
-  (setq codeium/document/cursor_offset 'my-codeium/document/cursor_offset)
-  
-  ;; Ensure Codeium is active in all programming modes
-  (add-hook 'prog-mode-hook (lambda () 
-                              (setq-local completion-at-point-functions 
-                                          (cons #'codeium-completion-at-point
-                                                (remove #'codeium-completion-at-point completion-at-point-functions))))))
+;; use M-x codeium-diagnose to see apis/fields that would be sent to the local language server
 (after! org-download
   (setq org-download-method 'directory)
   (setq org-download-image-dir "attachments")

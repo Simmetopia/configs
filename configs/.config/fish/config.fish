@@ -13,7 +13,8 @@ source ~/.config/fish/nnn_completion.fish
 source ~/.config/fish/alacritty_completions.fish
 
 # Meta
-set -gx ERL_AFLAGset -gx fish_user_paths \
+set -gx ERL_AFLAG
+set -gx fish_user_paths \
     /usr/local/sbin \
     $HOME/.local/share/npm/bin \
     $HOME/.local/share/bob/nvim-bin \
