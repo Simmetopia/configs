@@ -16,7 +16,6 @@
 ;;
 (setq org-directory "~/obs-vault/")
 (setq org-roam-directory "~/obs-vault/")
-(setq org-roam-graph-viewer "/usr/bin/microsoft-edge")
 (setq org-agenda-files '("~/obs-vault"
                          "~/obs-vault/daily/"))
 
