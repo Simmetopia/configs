@@ -23,10 +23,9 @@ window#waybar {
 #clock.2,
 #clock.3,
 #pulseaudio,
-#memory,
-#cpu,
 #battery,
-#disk,
+#custom-mullvad,
+#language,
 #tray {
 	background: #1a1a1a;
 }
@@ -51,24 +50,20 @@ window#waybar {
 #pulseaudio {
 	color: #268bd2;
 }
-#memory {
-	color: #2aa198;
-}
-#cpu {
-	color: #6c71c4;
-}
 #battery {
 	color: #859900;
 }
-#disk {
+#custom-mullvad {
 	color: #b58900;
+}
+#language {
+	color: #d33682;
 }
 
 #clock,
 #pulseaudio,
-#memory,
-#cpu,
 #battery,
-#disk {
+#custom-mullvad,
+#language {
 	padding: 0 10px;
 }
