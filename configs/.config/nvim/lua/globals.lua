@@ -55,9 +55,6 @@ vim.opt.showmode = false
 -- Set the options for text completion
 vim.opt.completeopt = { "menuone", "noinsert", "noselect" }
 
--- Set the default shell to Bash
-vim.opt.shell = "/usr/bin/fish"
-
 -- Give more space for displaying messages
 vim.opt.cmdheight = 2
 
