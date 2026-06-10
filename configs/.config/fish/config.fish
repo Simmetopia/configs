@@ -26,5 +26,8 @@ set -gx fish_user_paths \
 
 set -gx FLYCTL_INSTALL "$HOME/.fly"
 set -gx DOTNET_ROOT "$HOME/.dotnet"
+
+set -gx TRILIUM_NEXT_TOKEN_OP_REF "op://work/trilium-etapi-key/credential"
+set -gx TRILIUM_NEXT_INBOX_NOTE_ID "VD7yNJin8PFI"
 set -gx EDITOR nvim
 set -gx VISUAL nvim
