@@ -16,4 +16,7 @@ end, {
 })
 
 vim.keymap.set("n", "<leader>tn", ":TriliumNoteNew ", { desc = "Trilium new note" })
+vim.keymap.set("x", "<leader>tn", "<Esc><cmd>lua require('trilium_notes').new_note_from_selection()<CR>", {
+  desc = "Trilium new note from selection",
+})
 vim.keymap.set("n", "<leader>te", ":TriliumNoteExport<CR>", { desc = "Trilium export note" })

@@ -105,6 +105,100 @@ local function current_title()
   return "Untitled"
 end
 
+local function current_language()
+  if vim.bo.filetype ~= "" then
+    return vim.bo.filetype
+  end
+
+  local extension = vim.fn.expand("%:e")
+
+  if extension ~= "" then
+    return extension
+  end
+
+  return "text"
+end
+
+local function visual_selection()
+  local active_mode = vim.fn.mode()
+  local is_active_visual = active_mode == "v" or active_mode == "V" or active_mode == "\22"
+  local mode = is_active_visual and active_mode or vim.fn.visualmode()
+  local start_pos = is_active_visual and vim.fn.getpos("v") or vim.fn.getpos("'<")
+  local end_pos = is_active_visual and vim.fn.getpos(".") or vim.fn.getpos("'>")
+  local start_line = start_pos[2]
+  local start_col = start_pos[3]
+  local end_line = end_pos[2]
+  local end_col = end_pos[3]
+
+  if start_line == 0 or end_line == 0 then
+    return nil
+  end
+
+  if start_line > end_line or (start_line == end_line and start_col > end_col) then
+    start_line, end_line = end_line, start_line
+    start_col, end_col = end_col, start_col
+  end
+
+  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+
+  if #lines == 0 then
+    return nil
+  end
+
+  if mode == "v" then
+    lines[#lines] = string.sub(lines[#lines], 1, end_col)
+    lines[1] = string.sub(lines[1], start_col)
+  elseif mode == "\22" then
+    for index, line in ipairs(lines) do
+      lines[index] = string.sub(line, start_col, end_col)
+    end
+  end
+
+  local source_path = vim.api.nvim_buf_get_name(0)
+  local filename = source_path ~= "" and vim.fn.fnamemodify(source_path, ":t") or "[No Name]"
+  local line_reference = tostring(start_line)
+
+  if end_line ~= start_line then
+    line_reference = line_reference .. "-" .. end_line
+  end
+
+  return {
+    filename = filename,
+    source_path = source_path,
+    line_reference = line_reference,
+    reference = filename .. ":" .. line_reference,
+    language = current_language(),
+    lines = lines,
+  }
+end
+
+local function note_lines(title, capture)
+  local lines = { "# " .. title, "" }
+
+  if not capture then
+    table.insert(lines, "")
+    return lines
+  end
+
+  table.insert(lines, "Source: `" .. capture.reference .. "`")
+
+  if capture.source_path ~= "" then
+    table.insert(lines, "File: `" .. capture.source_path .. "`")
+  end
+
+  table.insert(lines, "")
+  table.insert(lines, "```" .. capture.language)
+
+  for _, line in ipairs(capture.lines) do
+    table.insert(lines, line)
+  end
+
+  table.insert(lines, "```")
+  table.insert(lines, "")
+
+  return lines
+end
+
 local function curl_quote(value)
   return '"' .. tostring(value):gsub("\\", "\\\\"):gsub('"', '\\"') .. '"'
 end
@@ -228,11 +322,11 @@ function M.setup(opts)
   config = vim.tbl_deep_extend("force", vim.deepcopy(defaults), opts or {})
 end
 
-function M.new_note(title)
+function M.new_note(title, capture)
   if not title or trim(title) == "" then
     vim.ui.input({ prompt = "Trilium note title: " }, function(input)
       if input and trim(input) ~= "" then
-        M.new_note(input)
+        M.new_note(input, capture)
       end
     end)
 
@@ -242,10 +336,21 @@ function M.new_note(title)
   title = trim(title)
 
   local path = note_path(title)
-  vim.fn.writefile({ "# " .. title, "", "" }, path)
+  vim.fn.writefile(note_lines(title, capture), path)
   vim.cmd.edit(vim.fn.fnameescape(path))
   vim.bo.filetype = "markdown"
   vim.cmd.normal({ "G", bang = true })
+end
+
+function M.new_note_from_selection()
+  local capture = visual_selection()
+
+  if not capture or trim(table.concat(capture.lines, "\n")) == "" then
+    notify("Visual selection is empty.", vim.log.levels.ERROR)
+    return
+  end
+
+  M.new_note(nil, capture)
 end
 
 function M.export_current_note()
