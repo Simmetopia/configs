@@ -29,6 +29,12 @@ vim.opt.number = true
 -- Disable line wrapping
 vim.opt.wrap = false
 
+-- Use Tree-sitter syntax trees for folding
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+vim.opt.foldlevel = 99
+vim.opt.foldlevelstart = 99
+
 -- Enable smart case sensitivity
 vim.opt.smartcase = true
 
@@ -63,3 +69,9 @@ vim.opt.updatetime = 50
 
 -- Don't show messages in the completion menu
 vim.opt.shortmess:append("c")
+
+-- Source project-local .nvim.lua / .nvimrc (Neovim prompts to trust each file
+-- once). Used for per-project overseer tasks; see plugin/overseer.lua.
+-- Must be set here rather than in plugin/: exrc is processed after init.lua but
+-- before plugin/ files are sourced.
+vim.opt.exrc = true
