@@ -1,25 +1,15 @@
 local wezterm = require 'wezterm'
-local mux = wezterm.mux
 local act = wezterm.action
 local config = {}
 local keybinds = require 'keybinds'
 local window_frame = require 'window_frame'
 
-config.enable_wayland = true
 
 config.color_scheme = 'Kasugano (terminal.sexy)'
 -- config.color_scheme = 'Atelier Dune Light (base16)'
-config.font = wezterm.font 'FiraCode Nerd Font'
-config.font_size = 18.0
+config.font = wezterm.font('FiraCode Nerd Font')
+config.font_size = 14.0
 
-wezterm.on('mux-startup', function()
-end)
-
-config.unix_domains = {
-  { name = 'unix' }
-}
-
-config.default_gui_startup_args = { 'connect', 'unix' }
 
 config.leader = { key = 'a', mods = 'CTRL', timeout_milliseconds = 1000 }
 

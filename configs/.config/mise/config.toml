@@ -1,20 +1,11 @@
 [tools]
-databricks-cli = "latest"
-elixir = "latest"
-erlang = "latest"
-go = "latest"
-gradle = "8"
-java = "21"
-lazygit = "latest"
-luajit = "latest"
-maven = "latest"
+databricks-cli = { version = "latest", exe = "databricks" }
+kubectl = "latest"
 node = "latest"
-python = "3.10"
+pulumi = "3.239.0"
 rust = "latest"
 usage = "latest"
 zoxide = "latest"
-lua = "latest"
-opam = "latest"
 
 [settings]
 # plugins can read the versions files used by other version managers (if enabled by the plugin)
@@ -38,7 +29,6 @@ raw = false # set to true to directly pipe plugins to stdin/stdout/stderr
 yes = false         # set to true to automatically answer yes to all prompts
 
 not_found_auto_install = true # see MISE_NOT_FOUND_AUTO_INSTALL
-task_output = "prefix" # see Task Runner for more information
 paranoid = false       # see MISE_PARANOID
 
 experimental = true # enable experimental features

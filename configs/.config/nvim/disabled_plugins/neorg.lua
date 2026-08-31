@@ -29,5 +29,5 @@ vim.keymap.set("n", "<leader>ni", ":Neorg index<CR>", { noremap = true, silent =
 vim.keymap.set("n", "<leader>nt", ":Neorg journal today<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "<leader>ny", ":Neorg journal today<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "<leader>nf", function()
-  MiniPick.builtin.files({}, { source = { cwd = vim.fn.expand("~/notes") } })
+  require('fzf-lua').files({ cwd = vim.fn.expand("~/notes") })
 end, { noremap = true, silent = true })
