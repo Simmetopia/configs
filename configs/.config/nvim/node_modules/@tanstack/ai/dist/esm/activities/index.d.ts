@@ -1,0 +1,33 @@
+import { AnyTextAdapter } from './chat/adapter.js';
+import { AnySummarizeAdapter } from './summarize/adapter.js';
+import { AnyImageAdapter } from './generateImage/adapter.js';
+import { AnyAudioAdapter } from './generateAudio/adapter.js';
+import { AnyVideoAdapter } from './generateVideo/adapter.js';
+import { AnyTTSAdapter } from './generateSpeech/adapter.js';
+import { AnyTranscriptionAdapter } from './generateTranscription/adapter.js';
+import { AnyEmbeddingAdapter } from './embed/adapter.js';
+import { AnyRerankAdapter } from './rerank/adapter.js';
+export { kind as textKind, chat, type TextActivityOptions, type TextActivityResult, } from './chat/index.js';
+export { BaseTextAdapter, type AnyTextAdapter, type TextAdapter, type TextAdapterConfig, type StructuredOutputOptions, type StructuredOutputResult, } from './chat/adapter.js';
+export { kind as summarizeKind, summarize, type SummarizeActivityOptions, type SummarizeActivityResult, type SummarizeProviderOptions, } from './summarize/index.js';
+export { BaseSummarizeAdapter, type SummarizeAdapter, type SummarizeAdapterConfig, type AnySummarizeAdapter, } from './summarize/adapter.js';
+export { ChatStreamSummarizeAdapter, type ChatStreamCapable, type InferTextProviderOptions, } from './summarize/chat-stream-summarize.js';
+export { kind as rerankKind, rerank, createRerankOptions, type RerankActivityOptions, type RerankProviderOptions, } from './rerank/index.js';
+export { BaseRerankAdapter, type RerankAdapter, type RerankAdapterConfig, type AnyRerankAdapter, } from './rerank/adapter.js';
+export { kind as imageKind, generateImage, type ImageActivityOptions, type ImageActivityResult, type ImageProviderOptionsForModel, type ImageSizeForModel, } from './generateImage/index.js';
+export { BaseImageAdapter, type ImageAdapter, type ImageAdapterConfig, type AnyImageAdapter, } from './generateImage/adapter.js';
+export { kind as audioKind, generateAudio, type AudioActivityOptions, type AudioActivityResult, type AudioProviderOptions, } from './generateAudio/index.js';
+export { BaseAudioAdapter, type AudioAdapter, type AudioAdapterConfig, type AnyAudioAdapter, } from './generateAudio/adapter.js';
+export { kind as videoKind, generateVideo, getVideoJobStatus, type VideoActivityOptions, type VideoActivityResult, type VideoProviderOptions, type VideoCreateOptions, type VideoStatusOptions, type VideoUrlOptions, type VideoDurationForAdapter, } from './generateVideo/index.js';
+export { BaseVideoAdapter, type VideoAdapter, type VideoAdapterConfig, type AnyVideoAdapter, type DurationOptions, } from './generateVideo/adapter.js';
+export { snapToDurationOption } from './generateVideo/snap.js';
+export { kind as ttsKind, generateSpeech, type TTSActivityOptions, type TTSActivityResult, type TTSProviderOptions, } from './generateSpeech/index.js';
+export { BaseTTSAdapter, type TTSAdapter, type TTSAdapterConfig, type AnyTTSAdapter, } from './generateSpeech/adapter.js';
+export { kind as transcriptionKind, generateTranscription, type TranscriptionActivityOptions, type TranscriptionActivityResult, type TranscriptionProviderOptions, } from './generateTranscription/index.js';
+export { BaseTranscriptionAdapter, type TranscriptionAdapter, type TranscriptionAdapterConfig, type AnyTranscriptionAdapter, } from './generateTranscription/adapter.js';
+export { kind as embeddingKind, embed, type EmbedOptions, type EmbedProviderOptionsForModel, type EmbeddingInputForModel, } from './embed/index.js';
+export { BaseEmbeddingAdapter, type EmbeddingAdapter, type EmbeddingAdapterConfig, type AnyEmbeddingAdapter, } from './embed/adapter.js';
+/** Union of all adapter types that can be passed to chat() */
+export type AIAdapter = AnyTextAdapter | AnySummarizeAdapter | AnyImageAdapter | AnyAudioAdapter | AnyVideoAdapter | AnyTTSAdapter | AnyTranscriptionAdapter | AnyEmbeddingAdapter | AnyRerankAdapter;
+/** Union type of all adapter kinds */
+export type AdapterKind = 'text' | 'summarize' | 'image' | 'audio' | 'video' | 'tts' | 'transcription' | 'embedding' | 'rerank';

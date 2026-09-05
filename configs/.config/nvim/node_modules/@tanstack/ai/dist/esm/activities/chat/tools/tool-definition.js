@@ -1,0 +1,97 @@
+//#region src/activities/chat/tools/tool-definition.ts
+/**
+* Create an isomorphic tool definition that can be used directly or instantiated for server/client
+*
+* The definition contains all tool metadata (name, description, schemas) and can be:
+* 1. Used directly in chat() on the server (as a tool definition without execute)
+* 2. Instantiated as a server tool with .server()
+* 3. Instantiated as a client tool with .client()
+*
+* Supports any Standard JSON Schema compliant library (Zod v4+, ArkType, Valibot, etc.)
+* or plain JSON Schema objects.
+*
+* @example
+* ```typescript
+* import { toolDefinition } from '@tanstack/ai';
+* import { z } from 'zod';
+*
+* // Using Zod (natively supports Standard JSON Schema)
+* const addToCartTool = toolDefinition({
+*   name: 'addToCart',
+*   description: 'Add a guitar to the shopping cart (requires approval)',
+*   needsApproval: true,
+*   inputSchema: z.object({
+*     guitarId: z.string(),
+*     quantity: z.number(),
+*   }),
+*   outputSchema: z.object({
+*     success: z.boolean(),
+*     cartId: z.string(),
+*     totalItems: z.number(),
+*   }),
+* });
+*
+* // Use directly in chat (server-side, no execute function)
+* chat({
+*   tools: [addToCartTool],
+*   // ...
+* });
+*
+* // Or create server-side implementation
+* const addToCartServer = addToCartTool.server(async (args) => {
+*   // args is typed as { guitarId: string; quantity: number }
+*   return {
+*     success: true,
+*     cartId: 'CART_' + Date.now(),
+*     totalItems: args.quantity,
+*   };
+* });
+*
+* // Or create client-side implementation
+* const addToCartClient = addToCartTool.client(async (args) => {
+*   // Client-specific logic (e.g., localStorage)
+*   return { success: true, cartId: 'local', totalItems: 1 };
+* });
+* ```
+*/
+function toolDefinition(config) {
+	if (config.approvalSchema !== void 0 && config.needsApproval !== true) throw new TypeError("approvalSchema requires needsApproval: true.");
+	const inputSchema = config.inputSchema;
+	const outputSchema = config.outputSchema;
+	const approvalSchema = config.approvalSchema;
+	const needsApproval = config.needsApproval;
+	return {
+		__toolSide: "definition",
+		...config,
+		inputSchema,
+		outputSchema,
+		approvalSchema,
+		needsApproval,
+		server(execute) {
+			return {
+				__toolSide: "server",
+				...config,
+				inputSchema,
+				outputSchema,
+				approvalSchema,
+				needsApproval,
+				execute
+			};
+		},
+		client(execute) {
+			return {
+				__toolSide: "client",
+				...config,
+				inputSchema,
+				outputSchema,
+				approvalSchema,
+				needsApproval,
+				...execute !== void 0 && { execute }
+			};
+		}
+	};
+}
+//#endregion
+export { toolDefinition };
+
+//# sourceMappingURL=tool-definition.js.map
