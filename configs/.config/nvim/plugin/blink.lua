@@ -5,8 +5,13 @@ vim.pack.add({
   { src = 'https://github.com/saghen/blink.cmp', version = vim.version.range('1.x') },
 })
 
+
 require('blink.cmp').setup({
   fuzzy = { implementation = "rust" },
+  -- Route the snippets source and expand/jump through LuaSnip, so snippets
+  -- written in snippets/<filetype>/ show up in the menu. friendly-snippets is
+  -- still picked up, via LuaSnip's own from_vscode loader.
+  snippets = { preset = 'luasnip' },
   sources = {
     default = { "lazydev", "lsp", "path", "snippets", "buffer" },
     per_filetype = {

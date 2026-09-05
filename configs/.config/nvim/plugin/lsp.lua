@@ -7,3 +7,5 @@ vim.pack.add({
 require("mason").setup({})
 
 require("mason-lspconfig").setup({})
+
+vim.lsp.enable('ocamllsp')
