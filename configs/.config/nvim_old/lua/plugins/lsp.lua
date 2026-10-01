@@ -12,15 +12,10 @@ M.config = function()
   -- Mason setup
   require("mason").setup({})
 
-  vim.lsp.config('ocamllsp', {
-    cmd = { vim.fn.expand('/home/simmetopia/code/itminds/aoc-ocaml/2025/_opam/bin/ocamllsp') },
-    root_markers = { '.git', 'dune-project', 'dune-workspace' },
-  })
-  vim.lsp.enable('ocamllsp')
-  -- Configure csharp_ls to find dotnet BEFORE mason-lspconfig sets it up
   -- Mason-lspconfig will now use the configuration we set above
   require("mason-lspconfig").setup({
   })
+  vim.lsp.enable({'nushell'})
 end
 
 return M
