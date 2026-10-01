@@ -1,0 +1,26 @@
+version: "3.9"
+services:
+  api:
+    image: quay.io/go-skynet/local-ai:latest-gpu-nvidia-cuda-13
+    # For CUDA 13, use: localai/localai:latest-gpu-nvidia-cuda-13
+    devices:
+      - nvidia.com/gpu=all
+    security_opt:
+      - label=disable
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
+      interval: 1m
+      timeout: 20m
+      retries: 5
+    ports:
+      - 8080:8080
+    environment:
+      - DEBUG=false
+    volumes:
+      - models:/models
+      - backends:/backends
+    # CDI driver configuration (recommended for NVIDIA Container Toolkit 1.14+)
+    # This uses the nvidia.com/gpu resource API
+volumes:
+  models:
+  backends:

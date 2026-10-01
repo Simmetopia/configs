@@ -13,3 +13,4 @@ configs/.config/ibus/bus/e7a91a3a77b542de938bb73d3ace53b1-unix-0
 /configs/.config/user-dirs.locale
 /configs/.config/xdg-terminals.list
 /todo.org
+.aider*

@@ -9,15 +9,15 @@ require("startup")
 -- Monitors
 -- monitor=,preferred,0x0,1
 -- Home setup
--- hl.monitor({ output = "HDMI-A-3", mode = "preferred", position = "0x0", scale = 1 })
--- hl.monitor({ output = "DP-1", mode = "preferred", position = "2560x0", scale = 1 })
--- hl.monitor({ output = "eDP-1", mode = "preferred", position = "5120x0", scale = 1 })
+-- hl.monitor({ output = "eDP-1", mode = "preferred", position = "0x0", scale = 1 })
+-- hl.monitor({ output = "DP-1", mode = "preferred", position = "1920x0", scale = 1 })
+-- hl.monitor({ output = "HDMI-A-3", mode = "preferred", position = "3840x0", scale = 1 })
 -- hl.monitor({ output = "eDP-1", disabled = true })
 
 -- Work / itminds
 hl.monitor({ output = "eDP-1", mode = "1920x1080@165", position = "0x0", scale = 1 })
-hl.monitor({ output = "DVI-I-2", mode = "2560x1440@75", position = "1920x0", scale = 1 })
-hl.monitor({ output = "DVI-I-1", mode = "2560x1440@75", position = "4480x0", scale = 1 })
+hl.monitor({ output = "DVI-I-1", mode = "2560x1440@75", position = "1920x0", scale = 1 })
+hl.monitor({ output = "DVI-I-2", mode = "2560x1440@75", position = "4480x0", scale = 1 })
 
 hl.monitor({ output = "Unknown-1", disabled = true })
 hl.monitor({ output = "Unknown-2", disabled = true })
