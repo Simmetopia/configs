@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Deterministic JSONL Pi double for Neovim integration tests (no network)."""
+import json
+import os
+import sys
+import time
+
+mode = ("chat" if "--tools" in sys.argv and sys.argv[sys.argv.index("--tools") + 1] == "web_search,webfetch" else
+        "question" if "--tools" in sys.argv else "edit")
+provider = sys.argv[sys.argv.index("--provider") + 1]
+model = sys.argv[sys.argv.index("--model") + 1]
+session_id = sys.argv[sys.argv.index("--session-id") + 1]
+thinking = "off"
+assert (provider, model) in {
+    ("lego-openai", "gpt-6-luna-2026-09-22"),
+    ("lego-openai", "gpt-6.1-sol-2026-09-29"),
+    ("lego-anthropic", "eu.anthropic.claude-opus-5-5"),
+}
+if mode == "question":
+    assert sys.argv[sys.argv.index("--tools") + 1] == "read,grep,find,ls"
+    assert "--no-extensions" in sys.argv
+if mode == "chat":
+    assert "--no-extensions" in sys.argv
+    extensions = [sys.argv[i + 1] for i, arg in enumerate(sys.argv[:-1]) if arg == "--extension"]
+    assert extensions[0] == "npm:pi-web-search@1.6.0"
+    assert extensions[1].endswith("/lua/ai/pi-extension/index.ts")
+    assert "--no-context-files" in sys.argv
+    assert "--system-prompt" in sys.argv
+    assert "--no-skills" in sys.argv
+    assert "--no-prompt-templates" in sys.argv
+if provider == "lego-anthropic":
+    assert sys.argv[sys.argv.index("--thinking") + 1] == "medium"
+for line in sys.stdin:
+    command = json.loads(line)
+    identifier = command.get("id")
+    typ = command["type"]
+    def emit(obj):
+        sys.stdout.write(json.dumps(obj) + "\n")
+        sys.stdout.flush()
+    if typ == "get_state":
+        if os.environ.get("AI_TEST_BEHAVIOR") == "timeout":
+            continue
+        selected = "wrong-model" if os.environ.get("AI_TEST_BEHAVIOR") == "mismatch" else model
+        emit({"type": "response", "id": identifier, "command": typ, "success": True, "data": {"isStreaming": False, "thinkingLevel": thinking, "model": {"provider": provider, "id": selected}}})
+    elif typ == "set_thinking_level":
+        thinking = command["level"]
+        emit({"type": "response", "id": identifier, "command": typ, "success": True})
+    elif typ == "get_messages":
+        emit({"type": "response", "id": identifier, "command": typ, "success": True, "data": {"messages": [{"role": "user", "content": "Restored string history"}] if os.environ.get("AI_TEST_BEHAVIOR") == "history" else []}})
+    elif typ == "prompt":
+        message = command["message"]
+        with open(os.environ["AI_TEST_LOG"], "a") as out:
+            out.write(json.dumps({"mode": mode, "provider": provider, "model": model, "session_id": session_id, "thinking": thinking, "message": message}) + "\n")
+        emit({"type": "response", "id": identifier, "command": typ, "success": True, "data": {"disposition": "started"}})
+        emit({"type": "agent_start"})
+        emit({"type": "message_update", "assistantMessageEvent": {"type": "text_delta", "delta": "working"}})
+        time.sleep(0.25)
+        if "unrecovered-tool" in message:
+            emit({"type": "tool_execution_end", "toolName": "edit", "isError": True})
+        if "agent-edits" in message:
+            emit({"type": "tool_execution_end", "toolName": "edit", "isError": True})
+            path = os.path.join(os.getcwd(), message.split("Project-relative file: ", 1)[1].split("\n", 1)[0])
+            with open(path, "a") as out:
+                out.write("# changed by agent\n")
+            emit({"type": "tool_execution_end", "toolName": "edit", "isError": False})
+        emit({"type": "message_end", "message": {"role": "assistant", "content": [{"type": "text", "text": "done"}], "stopReason": "stop"}})
+        emit({"type": "agent_end"})
+        emit({"type": "agent_settled"})
+        if "process-exits" in message:
+            sys.exit(3)
+    elif typ == "abort" or typ == "clear_queue":
+        emit({"type": "response", "id": identifier, "command": typ, "success": True})
