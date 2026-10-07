@@ -1,5 +1,5 @@
-local core = require('ai_comments.core')
-local treesitter = require('ai_comments.treesitter')
+local core = require('ai.comments.markers')
+local treesitter = require('ai.comments.treesitter')
 local M = {}
 
 function M.scan(buf, lines, ft)

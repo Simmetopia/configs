@@ -1,15 +1,37 @@
 local M = {}
 
--- is it possible to use nvim's treesitter parsing instead of manual code comment parsing AI?
+-- Marker grammar and fallback comment leaders. No process or file mutation here.
 
 local prefixes = {
-  lua = { '--' }, sql = { '--' }, python = { '#' }, sh = { '#' }, bash = { '#' }, zsh = { '#' },
-  ruby = { '#' }, yaml = { '#' }, toml = { '#' }, conf = { '#', ';' },
-  javascript = { '//' }, typescript = { '//' }, javascriptreact = { '//' },
-  typescriptreact = { '//' }, c = { '//' }, cpp = { '//' }, java = { '//' },
-  go = { '//' }, rust = { '//' }, cs = { '//' }, swift = { '//' }, tsx = { '//' },
-  vim = { '"' }, lisp = { ';' }, clojure = { ';' }, scheme = { ';' },
-  ini = { ';', '#' }, dosini = { ';', '#' },
+  lua = { '--' },
+  sql = { '--' },
+  python = { '#' },
+  sh = { '#' },
+  bash = { '#' },
+  zsh = { '#' },
+  ruby = { '#' },
+  yaml = { '#' },
+  toml = { '#' },
+  conf = { '#', ';' },
+  javascript = { '//' },
+  typescript = { '//' },
+  javascriptreact = { '//' },
+  typescriptreact = { '//' },
+  c = { '//' },
+  cpp = { '//' },
+  java = { '//' },
+  go = { '//' },
+  rust = { '//' },
+  cs = { '//' },
+  swift = { '//' },
+  tsx = { '//' },
+  vim = { '"' },
+  lisp = { ';' },
+  clojure = { ';' },
+  scheme = { ';' },
+  ini = { ';', '#' },
+  dosini = { ';', '#' },
+  elixir = { "#" }
 }
 
 local function in_string(line, position)
@@ -33,7 +55,7 @@ local function parse_marker(text)
   local kind, instruction = text:match('^[Aa][Ii]([!?.]+)%s*(.-)%s*$')
   if not kind then instruction, kind = text:match('^(.-)%s+[Aa][Ii]([!?.]+)%s*$') end
   if (kind == '!' or kind == '!!' or kind == '?' or kind == '??' or kind == '.')
-    and instruction and instruction ~= '' then
+      and instruction and instruction ~= '' then
     return kind, instruction
   end
 end
@@ -103,24 +125,6 @@ end
 
 function M.pop(queue)
   return table.remove(queue, 1)
-end
-
-function M.feed(parser, chunk, on_record, on_error)
-  parser.pending = parser.pending .. chunk
-  while true do
-    local pos = parser.pending:find('\n', 1, true)
-    if not pos then break end
-    local line = parser.pending:sub(1, pos - 1):gsub('\r$', '')
-    parser.pending = parser.pending:sub(pos + 1)
-    if line ~= '' then
-      local ok, record = pcall(vim.json.decode, line)
-      if ok and type(record) == 'table' then on_record(record) else on_error() end
-    end
-  end
-  if #parser.pending > 1024 * 1024 then
-    parser.pending = ''
-    on_error()
-  end
 end
 
 -- Call only after checking the on-disk bytes against the unmodified buffer.

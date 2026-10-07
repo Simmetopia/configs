@@ -1,0 +1,13 @@
+{
+  "name": "neovim-ai-pi-extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local companion tools for the Neovim AI plugin",
+  "keywords": ["pi-package"],
+  "pi": { "extensions": ["./index.ts"] },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}
