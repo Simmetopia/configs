@@ -3,7 +3,9 @@ local rpc = require('ai.rpc')
 local M = {}
 
 function M.id(root, mode, tier)
-  -- Preserve the old IDs so this refactor resumes existing histories.
+  local current = require('ai.session_ids').load(root, mode, tier)
+  if current then return current end
+  -- Preserve the old IDs until the user explicitly starts a new conversation.
   if mode == 'chat' then return 'chat-' .. vim.fn.sha256(root .. ':web-chat'):sub(1, 32) end
   local hash = vim.fn.sha256(root .. ':' .. mode .. ':' .. tier)
   return hash:sub(1, 8) .. '-' .. hash:sub(9, 12) .. '-4' .. hash:sub(14, 16)

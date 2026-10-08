@@ -29,6 +29,7 @@ lua/ai/
   protocol.lua              JSONL framing, text blocks, stream reconstruction
   rpc.lua                   process/pipes, response IDs, deadlines, shutdown
   session.lua               stable IDs, tool policies, model/thinking handshake
+  session_ids.lua           current identities for explicit new conversations
   chat.lua                  web-chat queue and events
   comments/
     init.lua                saved-comment queue and request lifecycle
@@ -146,7 +147,15 @@ Markdown presentation and graceful shutdown with a signal fallback.
 ## Persistence and compatibility
 
 Old comment session IDs, chat session IDs, and the `stdpath('state')/ai-comments/`
-fingerprint directory are preserved. Existing histories continue to resume.
+fingerprint directory are preserved. Existing histories continue to resume until
+`:AIChatNew` or `:AINew` explicitly selects a fresh identity. Current identities
+are saved atomically under `stdpath('state')/ai-sessions/`; Pi's previous
+transcripts are never deleted. New commands wait for the idle process to exit
+before reconnecting with the new identity, preserving model and tool policies.
+They refuse active/queued/connecting work, clear the display and draft, and do
+not carry over conversation context. `:AINew` resets only the configured manual
+edit tier (Opus by default), shared with its edit markers—not question or Luna
+histories, handled-marker fingerprints, project files, or context instructions.
 Old Lua module names (`ai_comments`, `ai_chat`) and their two plugin entry points
 are removed; consumers should use `require('ai').setup()`.
 Commands remain unchanged, as do `<leader>aip` and `<leader>aic`.
@@ -155,6 +164,9 @@ Pi stores the full transcript. The Neovim view is bounded; restored responses
 and streamed display are clipped from the start to preserve opening Markdown
 structure. A display truncation notice points to the full Pi session. The log's
 line limit can still cut older Markdown blocks; it is not a transcript archive.
+`Ctrl-L`, `:AIClear`, and `:AIChatClear` clear only the corresponding view's log.
+They leave session context, queues, drafts and active streams untouched; a
+reconnection can restore persisted messages again.
 
 ## Sharing outside this dotfiles repo
 
@@ -181,7 +193,10 @@ bash tests/run_ai.sh
 
 The web tests require Node.js 22.18+ (native TypeScript stripping) and use mocked
 fetch responses, not network requests. Shared UI tests cover draft retention,
-multiline submission and resize behavior, including small editors.
+multiline submission and resize behavior, including small editors. New-topic
+tests cover busy refusal, empty context, retained old transcripts, model routing,
+and reconnecting to the new identity. The runner isolates Neovim state and mock
+transcripts in disposable directories.
 
 Offline tests cover markers, fallback/Tree-sitter scanning, cleanup, queues,
 model-tier isolation, process exit/restart, Markdown language injections,

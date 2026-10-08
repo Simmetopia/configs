@@ -8,9 +8,9 @@ function M.setup(options)
   local comments = require('ai.comments')
   local chat = require('ai.chat')
   local commands = {
-    AIToggle = comments.toggle, AIStatus = comments.status, AIAbort = comments.abort,
-    AIStop = comments.stop, AIRestart = comments.restart,
-    AIChat = chat.toggle, AIChatStop = chat.stop, AIChatRestart = chat.restart,
+    AIToggle = comments.toggle, AIClear = comments.clear, AIStatus = comments.status, AIAbort = comments.abort,
+    AINew = comments.new, AIStop = comments.stop, AIRestart = comments.restart,
+    AIChat = chat.toggle, AIChatNew = chat.new, AIChatClear = chat.clear, AIChatStop = chat.stop, AIChatRestart = chat.restart,
   }
   for name, callback in pairs(commands) do vim.api.nvim_create_user_command(name, callback, {}) end
   if config.mappings.project then
