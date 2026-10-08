@@ -1,5 +1,6 @@
 local M = {}
 
+-- Marker grammar and fallback comment leaders. No process or file mutation here.
 
 local prefixes = {
   lua = { '--' },
@@ -30,7 +31,7 @@ local prefixes = {
   scheme = { ';' },
   ini = { ';', '#' },
   dosini = { ';', '#' },
-  elixir = { '#' }
+  elixir = { "#" }
 }
 
 local function in_string(line, position)
@@ -124,24 +125,6 @@ end
 
 function M.pop(queue)
   return table.remove(queue, 1)
-end
-
-function M.feed(parser, chunk, on_record, on_error)
-  parser.pending = parser.pending .. chunk
-  while true do
-    local pos = parser.pending:find('\n', 1, true)
-    if not pos then break end
-    local line = parser.pending:sub(1, pos - 1):gsub('\r$', '')
-    parser.pending = parser.pending:sub(pos + 1)
-    if line ~= '' then
-      local ok, record = pcall(vim.json.decode, line)
-      if ok and type(record) == 'table' then on_record(record) else on_error() end
-    end
-  end
-  if #parser.pending > 1024 * 1024 then
-    parser.pending = ''
-    on_error()
-  end
 end
 
 -- Call only after checking the on-disk bytes against the unmodified buffer.

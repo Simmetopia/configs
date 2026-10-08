@@ -1,4 +1,4 @@
-local core = require('ai_comments.core')
+local core = require('ai.comments.markers')
 local M = {}
 
 -- nil means that parsing was unavailable; an empty table means it succeeded
@@ -9,7 +9,7 @@ function M.scan(buf, lines, ft)
 
   local parsed, markers = pcall(function()
     local by_line = {}
-    parser:parse()
+    parser:parse(true)
     parser:for_each_tree(function(tree, language_tree)
       local language = language_tree:lang()
       local function visit(node)
