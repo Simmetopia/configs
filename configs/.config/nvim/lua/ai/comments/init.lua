@@ -22,9 +22,9 @@ local function project(root)
   local handled = storage.load(root)
   local p = { root = root, sessions = {}, queue = {}, handled = handled, seen = vim.deepcopy(handled), paused = false }
   p.view = view.new(root, 'Pi project',
-    'i: prompt  q: hide  :AIStatus / :AIAbort / :AIStop / :AIRestart',
+    'i: prompt  Ctrl-L: clear  q: hide  :AINew / :AIStatus / :AIAbort / :AIStop / :AIRestart',
     function()
-      local status = p.active and ('busy (' .. p.active.mode .. '/' .. p.active.tier .. ')')
+      local status = p.new_pending and 'starting new conversation' or p.active and ('busy (' .. p.active.mode .. '/' .. p.active.tier .. ')')
         or (p.paused and 'stopped (restart required)' or 'idle')
       return 'Status: ' .. status .. ' | queued: ' .. #p.queue
     end,
@@ -109,7 +109,8 @@ local function record(p, session, event)
   render(p)
 end
 
-local function start(p, mode, tier)
+local start
+start = function(p, mode, tier)
   local key = mode .. ':' .. tier
   if p.sessions[key] then return p.sessions[key] end
   local session, err = sessions.start(p.root, mode, tier, {
@@ -128,6 +129,10 @@ local function start(p, mode, tier)
         append(p, 'Pi ' .. key .. ' exited (code ' .. code .. '); :AIRestart to reconnect.')
         finish(p, s, false)
         notify('Pi RPC exited; use :AIRestart.', vim.log.levels.ERROR)
+      end
+      if p.new_pending == key then
+        p.new_pending, p.paused = nil, false
+        start(p, mode, tier)
       end
       render(p)
     end,
@@ -171,6 +176,7 @@ dispatch = function(p)
 end
 
 enqueue_prompt = function(p, text)
+  if p.new_pending then return false end
   serial = serial + 1
   local tier = require('ai.config').options.comments.prompt_tier
   local item = { key = 'manual-' .. serial, mode = 'edit', tier = tier,
@@ -210,6 +216,37 @@ function M.toggle()
   view.toggle(p.view)
 end
 
+function M.clear()
+  local p = current()
+  if p then view.clear(p.view) end
+end
+
+function M.new()
+  local p = current()
+  if not p then return notify('Open a saved project file first.', vim.log.levels.WARN) end
+  local tier = require('ai.config').options.comments.prompt_tier
+  local key = 'edit:' .. tier
+  local session = p.sessions[key]
+  local transitioning = false
+  for _, s in pairs(p.sessions) do
+    if not s.ready or s.client.stopping then transitioning = true end
+  end
+  if p.new_pending or p.active or #p.queue > 0 or transitioning then
+    return notify('Finish pending work or use :AIStop and wait for exit before :AINew.', vim.log.levels.WARN)
+  end
+  local id, err = require('ai.session_ids').fresh(p.root, 'edit', tier)
+  if not id then return notify(err, vim.log.levels.ERROR) end
+  view.reset(p.view)
+  if session then
+    p.new_pending, p.paused = key, true
+    sessions.stop(session)
+  else
+    p.paused = false
+    start(p, 'edit', tier)
+  end
+  render(p)
+end
+
 function M.status()
   local p = current()
   if not p then return notify('Open a saved project file first.', vim.log.levels.WARN) end
@@ -245,7 +282,7 @@ end
 function M.stop()
   local p = current()
   if not p then return end
-  p.paused = true
+  p.paused, p.new_pending = true, nil
   clear_queue(p)
   if p.active then p.seen[p.active.key] = nil; p.active = nil end
   for _, s in pairs(p.sessions) do sessions.stop(s) end

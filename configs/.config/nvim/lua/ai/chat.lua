@@ -14,14 +14,17 @@ local function chat()
   local root = roots.chat_root()
   if chats[root] then return chats[root] end
   local c = { root = root, queue = {}, stopped = false, busy = false }
-  c.view = view.new(root, 'Pi web chat', 'i: prompt  q: hide  :AIChatStop / :AIChatRestart',
+  c.view = view.new(root, 'Pi web chat', 'i: prompt  Ctrl-L: clear  q: hide  :AIChatNew / :AIChatStop / :AIChatRestart',
     function()
-      local status = c.busy and 'Busy' or c.stopped and 'Stopped (:AIChatRestart)'
+      local status = c.new_pending and 'Starting new chat' or c.busy and 'Busy' or c.stopped and 'Stopped (:AIChatRestart)'
         or c.session and not c.session.ready and 'Connecting' or 'Ready'
       return status .. ' | queued: ' .. #c.queue
     end,
     function() return c.session and c.session.stream or '' end,
-    function(text) c.queue[#c.queue + 1] = text; dispatch(c); render(c) end)
+    function(text)
+      if c.new_pending then return false end
+      c.queue[#c.queue + 1] = text; dispatch(c); render(c)
+    end)
   chats[root] = c
   return c
 end
@@ -67,6 +70,10 @@ start = function(c)
     on_exit = function(_, code, stopping)
       c.session, c.busy = nil, false
       if not stopping then c.stopped = true; append(c, 'Pi exited (' .. code .. '); use :AIChatRestart') end
+      if c.new_pending then
+        c.new_pending, c.stopped = false, false
+        start(c)
+      end
       render(c)
     end,
     on_ready = function(_, history)
@@ -107,9 +114,32 @@ function M.toggle()
   if view.toggle(c.view) then start(c) end
 end
 
+function M.clear()
+  view.clear(chat().view)
+end
+
+function M.new()
+  local c = chat()
+  if c.new_pending or c.busy or #c.queue > 0 or c.session and
+      (not c.session.ready or c.session.client.stopping) then
+    return vim.notify('AI: Finish pending work or use :AIChatStop and wait for exit before :AIChatNew.', vim.log.levels.WARN)
+  end
+  local id, err = require('ai.session_ids').fresh(c.root, 'chat', require('ai.config').options.chat.tier)
+  if not id then return vim.notify('AI: ' .. err, vim.log.levels.ERROR) end
+  view.reset(c.view)
+  if c.session then
+    c.new_pending, c.stopped = true, true
+    sessions.stop(c.session)
+  else
+    c.stopped = false
+    start(c)
+  end
+  render(c)
+end
+
 function M.stop()
   local c = chat()
-  c.stopped, c.busy, c.queue = true, false, {}
+  c.stopped, c.busy, c.queue, c.new_pending = true, false, {}, false
   sessions.stop(c.session)
   render(c)
 end

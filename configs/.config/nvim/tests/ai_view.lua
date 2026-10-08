@@ -28,6 +28,15 @@ key(v.input_buf, 'n', '<C-S>')
 assert(submitted[1] == 'first line\nsecond line')
 assert(v.input_win == nil)
 assert(vim.api.nvim_buf_get_lines(v.input_buf, 0, -1, false)[1] == '')
+view.message(v, 'Pi', 'Old output')
+key(v.buf, 'n', '<C-L>')
+assert(#v.log == 0 and vim.api.nvim_buf_line_count(v.buf) == 4)
+v.stream = function() return 'Active response' end
+view.message(v, 'You', 'Old prompt')
+view.clear(v)
+assert(#v.log == 0)
+assert(table.concat(vim.api.nvim_buf_get_lines(v.buf, 0, -1, false), '\n'):find('Active response', 1, true))
+v.stream = function() return '' end
 view.input(v)
 local old_columns, old_lines = vim.o.columns, vim.o.lines
 for _, size in ipairs({ { 100, 40 }, { 20, 8 } }) do

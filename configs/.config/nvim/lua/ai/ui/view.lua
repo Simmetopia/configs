@@ -44,6 +44,19 @@ function M.render(view)
   if follow then vim.api.nvim_win_set_cursor(view.win, { #lines, 0 }) end
 end
 
+-- Display-only: leave the workflow, live stream and persisted session untouched.
+function M.clear(view)
+  view.log = {}
+  M.render(view)
+end
+
+function M.reset(view)
+  M.clear(view)
+  if view.input_buf and vim.api.nvim_buf_is_valid(view.input_buf) then
+    vim.api.nvim_buf_set_lines(view.input_buf, 0, -1, false, { '' })
+  end
+end
+
 function M.hide(view)
   if valid(view.input_win) then vim.api.nvim_win_close(view.input_win, true) end
   if valid(view.win) then vim.api.nvim_win_close(view.win, true) end
@@ -106,6 +119,7 @@ function M.toggle(view)
     view.buf = vim.api.nvim_create_buf(false, true)
     vim.b[view.buf].ai_root = view.root
     vim.bo[view.buf].bufhidden = 'hide'
+    vim.keymap.set('n', '<C-l>', function() M.clear(view) end, { buffer = view.buf, desc = 'Clear displayed AI history' })
     vim.keymap.set('n', 'q', function() M.hide(view) end, { buffer = view.buf })
     vim.keymap.set('n', 'i', function() M.input(view) end, { buffer = view.buf })
   end

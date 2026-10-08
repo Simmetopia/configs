@@ -46,6 +46,18 @@ by this Neovim instance; no repository scan occurs.
   without discarding your draft. Paste multiple lines or use insert-mode `<Ctrl-J>`
   for a newline; `<Ctrl-S>` sends the whole draft in normal or insert mode.
   Both floats reposition automatically when Neovim is resized.
+- `<Ctrl-L>` in either conversation clears its displayed history. `:AIClear`
+  clears project output; `:AIChatClear` clears web-chat output. This does not
+  reset Pi's conversation context, discard queued requests, or abort a response.
+  Active responses remain visible; reconnecting may restore persisted history.
+- `:AIChatNew`: start a fresh Sol chat for a new topic, clearing old output
+  and the draft without carrying over conversation context.
+- `:AINew`: start a fresh Opus project conversation (also used by `AI!!`).
+  Luna edit/question and Opus question histories remain unchanged.
+  New-conversation commands refuse while work is active, queued, or connecting;
+  finish it or stop and wait for exit first. Old Pi transcripts are kept on disk,
+  and the new session identity is saved so reconnects/Neovim restarts resume it.
+  Project files and normal project instructions are not reset by `:AINew`.
 - `:AIStatus`: project connection and queue status.
 - `:AIAbort`: discard local queued requests and abort the active request.
 - `:AIStop`: close all project RPC sessions and discard pending work.
