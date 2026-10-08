@@ -7,7 +7,6 @@ vim.g.maplocalleader = " "
 vim.g.background = 'dark'
 
 require("globals")
-require("zoxide_picker")
 require("keybinds")
 
 -- Build step hooks — must be defined before vim.pack.add() calls

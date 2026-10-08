@@ -2,7 +2,6 @@
 databricks-cli = { version = "latest", exe = "databricks" }
 kubectl = "latest"
 node = "latest"
-pulumi = "3.239.0"
 rust = "latest"
 usage = "latest"
 zoxide = "latest"
@@ -10,6 +9,8 @@ opam = { version = "latest", asset_pattern = "opam-*-{gnu_arch}-{os}" }
 pnpm = "10.33.2"
 zig = "0.15.2"
 pi = "latest"
+elixir = "1.19.5-otp-28"
+erlang = "28.5"
 
 [settings]
 # plugins can read the versions files used by other version managers (if enabled by the plugin)

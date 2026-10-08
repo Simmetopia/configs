@@ -1,15 +1,36 @@
 local M = {}
 
--- is it possible to use nvim's treesitter parsing instead of manual code comment parsing AI?
 
 local prefixes = {
-  lua = { '--' }, sql = { '--' }, python = { '#' }, sh = { '#' }, bash = { '#' }, zsh = { '#' },
-  ruby = { '#' }, yaml = { '#' }, toml = { '#' }, conf = { '#', ';' },
-  javascript = { '//' }, typescript = { '//' }, javascriptreact = { '//' },
-  typescriptreact = { '//' }, c = { '//' }, cpp = { '//' }, java = { '//' },
-  go = { '//' }, rust = { '//' }, cs = { '//' }, swift = { '//' }, tsx = { '//' },
-  vim = { '"' }, lisp = { ';' }, clojure = { ';' }, scheme = { ';' },
-  ini = { ';', '#' }, dosini = { ';', '#' },
+  lua = { '--' },
+  sql = { '--' },
+  python = { '#' },
+  sh = { '#' },
+  bash = { '#' },
+  zsh = { '#' },
+  ruby = { '#' },
+  yaml = { '#' },
+  toml = { '#' },
+  conf = { '#', ';' },
+  javascript = { '//' },
+  typescript = { '//' },
+  javascriptreact = { '//' },
+  typescriptreact = { '//' },
+  c = { '//' },
+  cpp = { '//' },
+  java = { '//' },
+  go = { '//' },
+  rust = { '//' },
+  cs = { '//' },
+  swift = { '//' },
+  tsx = { '//' },
+  vim = { '"' },
+  lisp = { ';' },
+  clojure = { ';' },
+  scheme = { ';' },
+  ini = { ';', '#' },
+  dosini = { ';', '#' },
+  elixir = { '#' }
 }
 
 local function in_string(line, position)
@@ -33,7 +54,7 @@ local function parse_marker(text)
   local kind, instruction = text:match('^[Aa][Ii]([!?.]+)%s*(.-)%s*$')
   if not kind then instruction, kind = text:match('^(.-)%s+[Aa][Ii]([!?.]+)%s*$') end
   if (kind == '!' or kind == '!!' or kind == '?' or kind == '??' or kind == '.')
-    and instruction and instruction ~= '' then
+      and instruction and instruction ~= '' then
     return kind, instruction
   end
 end

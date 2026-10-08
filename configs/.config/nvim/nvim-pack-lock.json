@@ -26,11 +26,11 @@
       "src": "https://github.com/catppuccin/nvim"
     },
     "codecompanion.nvim": {
-      "rev": "182176ad46955c6da46e71ba4bf6f843e26f6e17",
+      "rev": "9af12c15d0604f429e034ea7542f6cd038ff909a",
       "src": "https://github.com/olimorris/codecompanion.nvim"
     },
     "diffview-plus.nvim": {
-      "rev": "43e60bca414e4991ed10118e59f809fb03bbeddd",
+      "rev": "875d16dd8c8aa86f1a5c3b5cef49e1133980ae94",
       "src": "https://github.com/dlyongemallo/diffview-plus.nvim"
     },
     "diffview.nvim": {
@@ -46,16 +46,11 @@
       "src": "https://github.com/rafamadriz/friendly-snippets"
     },
     "fzf": {
-      "rev": "52f4319a72c17e123396cc3a2e6abf2e96e9d753",
-      "src": "https://github.com/junegunn/fzf"
-    },
-    "fzf-lua": {
-      "rev": "05e44d38de0a79c11fba5f7bf8138791b1dbdd1e",
       "rev": "b1be3a8be1b833ce5b92fbbac11637643d60a046",
       "src": "https://github.com/junegunn/fzf"
     },
     "fzf-lua": {
-      "rev": "ec1b98d3f5f44a1cff1f2c3832af2f09c3d806ca",
+      "rev": "eab53acb3fd36479f084f854b4418d02b5c70382",
       "src": "https://github.com/ibhagwan/fzf-lua"
     },
     "kanagawa.nvim": {
@@ -63,8 +58,7 @@
       "src": "https://github.com/rebelot/kanagawa.nvim"
     },
     "kulala.nvim": {
-      "rev": "232a9939919fe9bc88d573bce92de50f2f160c60",
-      "rev": "dcad056448773ae5b54cadbfdbd188a599cfebd3",
+      "rev": "7a444779fcf917cd54dd82a4753adb886d8a808f",
       "src": "https://github.com/mistweaverco/kulala.nvim"
     },
     "lazydev.nvim": {
@@ -80,7 +74,6 @@
       "src": "https://github.com/iamcco/markdown-preview.nvim"
     },
     "mason-lspconfig.nvim": {
-      "rev": "40276c4df7e6bdce6801d6c035c6227f9115a855",
       "rev": "b3298993d55fa194279b5eb9dbfb3a43da65cadf",
       "src": "https://github.com/mason-org/mason-lspconfig.nvim"
     },
@@ -89,11 +82,10 @@
       "src": "https://github.com/mason-org/mason.nvim"
     },
     "mini.icons": {
-      "rev": "98faae31e9be1cc054ae63485e58ceb185efcad0",
+      "rev": "f642e3ba8c12afbc8f32f6d77ef6597eac56786f",
       "src": "https://github.com/echasnovski/mini.icons"
     },
     "mini.nvim": {
-      "rev": "9d01f392b33fb2ba36fbc87fc0bf4453e63ffb0a",
       "rev": "561751e839b99a4baca36b9d963166b66d2536a6",
       "src": "https://github.com/echasnovski/mini.nvim"
     },
@@ -107,8 +99,7 @@
       "version": "3.0.0 - 4.0.0"
     },
     "neogit": {
-      "rev": "5adc81b26232954cd7a90f158aa7844c18fc3165",
-      "rev": "c51a1dc7e0e0f40c4c396a2b1ceaa44b44e96032",
+      "rev": "70708be9664b7fcdd010eb07bdc3ebc9311c2027",
       "src": "https://github.com/NeogitOrg/neogit"
     },
     "neorg": {
@@ -124,54 +115,41 @@
       "src": "https://github.com/kevinhwang91/nvim-bqf"
     },
     "nvim-dap": {
-      "rev": "c9a0738e45f1bd41d792a126941348dce661cf9b",
       "rev": "cfa2d58f4537aca6ca83e2de1a0d9f1491121264",
       "src": "https://github.com/mfussenegger/nvim-dap"
     },
     "nvim-dap-python": {
       "rev": "1808458eba2b18f178f990e01376941a42c7f93b",
-      "src": "https://codeberg.org/mfussenegger/nvim-dap-python"
-    },
-    "nvim-dap-view": {
-      "rev": "210b2c0e4acc08aad23fbd5a7989dd0169f716d0",
-      "src": "https://github.com/igorlfs/nvim-dap-view",
-      "version": "1.0.0 - 2.0.0"
-    },
-    "nvim-lspconfig": {
-      "rev": "84252f9832fb5b9024fe9f7258e7c2aff915e6fb",
-      "src": "https://github.com/neovim/nvim-lspconfig"
-    },
-    "nvim-tree.lua": {
-      "rev": "b2aadda94b107480c48e548d6db51c6840b7b33c",
-      "src": "https://github.com/nvim-tree/nvim-tree.lua"
-    },
-    "nvim-treesitter": {
-      "rev": "427e9222363d07c32d6db6169e4049c28d58d141",
-      "src": "https://github.com/nvim-treesitter/nvim-treesitter"
-    },
-    "nvim-web-devicons": {
-      "rev": "5f032a85be210cd1c6ac98861eb3b187ff3bd5eb",
-      "src": "https://github.com/nvim-tree/nvim-web-devicons"
-    },
-    "obsidian.nvim": {
-      "rev": "f98e2be8923467194d8965d9cc342345fe634b02",
       "src": "https://github.com/mfussenegger/nvim-dap-python"
     },
     "nvim-dap-ui": {
       "rev": "cc9dd33aade7f20bae414d0cba163bc60d4d4b43",
       "src": "https://github.com/rcarriga/nvim-dap-ui"
     },
+    "nvim-dap-view": {
+      "rev": "210b2c0e4acc08aad23fbd5a7989dd0169f716d0",
+      "src": "https://github.com/igorlfs/nvim-dap-view",
+      "version": "1.0.0 - 2.0.0"
+    },
     "nvim-dap-virtual-text": {
       "rev": "fbdb48c2ed45f4a8293d0d483f7730d24467ccb6",
       "src": "https://github.com/theHamsta/nvim-dap-virtual-text"
     },
     "nvim-lspconfig": {
-      "rev": "a9bb4d5f4276aa5cddc015faa3ecc5a7b5a26b14",
+      "rev": "3e8d598d3b5f8338a41699c436e5fa11d2666cf0",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
     "nvim-nio": {
       "rev": "edcc181a875301dd21840189aa2f2f9ad69fc172",
       "src": "https://github.com/nvim-neotest/nvim-nio"
+    },
+    "nvim-tree.lua": {
+      "rev": "478c69c0fe253caea88de9c5e138bfa77395a59a",
+      "src": "https://github.com/nvim-tree/nvim-tree.lua"
+    },
+    "nvim-treesitter": {
+      "rev": "910fdf6f49e9dee7e7257c7d11a76b040fdfb9de",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter"
     },
     "nvim-web-devicons": {
       "rev": "58447c1fca354bbf184425e4a8d01deecbd6f3c4",
@@ -197,14 +175,6 @@
       "rev": "74b06c6c75e4eeb3108ec01852001636d85a932b",
       "src": "https://github.com/nvim-lua/plenary.nvim"
     },
-    "tree-sitter-manager.nvim": {
-      "rev": "023590c8f068788a0513a4409bf37ff7f9d1deff",
-      "src": "https://github.com/romus204/tree-sitter-manager.nvim"
-    },
-    "undotree": {
-      "rev": "6fa6b57cda8459e1e4b2ca34df702f55242f4e4d",
-      "src": "https://github.com/mbbill/undotree"
-    },
     "roslyn.nvim": {
       "rev": "bf1bd4e70bc7068d1b4aebf4ce03cc19a86615be",
       "src": "https://github.com/seblyng/roslyn.nvim"
@@ -216,6 +186,10 @@
     "tree-sitter-manager.nvim": {
       "rev": "d93782393d7d4b48ddbdbcb0fdff6f8cb8d7043a",
       "src": "https://github.com/romus204/tree-sitter-manager.nvim"
+    },
+    "undotree": {
+      "rev": "6fa6b57cda8459e1e4b2ca34df702f55242f4e4d",
+      "src": "https://github.com/mbbill/undotree"
     },
     "vim-dadbod": {
       "rev": "6d1d41da4873a445c5605f2005ad2c68c99d8770",

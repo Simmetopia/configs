@@ -1,15 +1,14 @@
 local core = require('ai_comments.core')
 local scanner = require('ai_comments.scanner')
+local resolver = require('ai_comments.models')
 local uv = vim.uv
 local M = {}
 local projects = {}
 local selected
 local serial = 0
 local shutting_down = false
-local models = {
-  luna = { provider = 'lego-openai', id = 'gpt-6-luna-2026-09-22' },
-  opus = { provider = 'lego-anthropic', id = 'eu.anthropic.claude-opus-5-5' },
-}
+-- Models are never defaulted; tiers are resolved from config (see ai_comments.models).
+local setup_models = {}
 
 local function session_key(mode, tier)
   return mode .. ':' .. tier
@@ -338,26 +337,42 @@ end
 
 local function start(p, mode, tier)
   local key = session_key(mode, tier)
-  if p.sessions[key] then return p.sessions[key] end
+  local model = resolver.resolve(p.root, setup_models)[tier]
+  if not model then
+    p.paused = true
+    append(p, 'Model for tier ' .. tier .. ' is not configured; run :AIModels')
+    render(p)
+    return nil
+  end
+  local existing = p.sessions[key]
+  if existing and not existing.model_changed
+    and existing.model.provider == model.provider and existing.model.id == model.id then
+    return existing
+  end
+  if existing then
+    -- The tier's model changed since this session started; swap it for a new one.
+    existing.stopping = true
+    if not existing.stdin:is_closing() then existing.stdin:shutdown() end
+    p.sessions[key] = nil
+  end
   local stdin, stdout, stderr = uv.new_pipe(false), uv.new_pipe(false), uv.new_pipe(false)
-  local hash = vim.fn.sha256(p.root .. ':' .. key)
+  local hash = vim.fn.sha256(p.root .. ':' .. key .. ':' .. model.provider .. '/' .. model.id)
   local id = hash:sub(1, 8) .. '-' .. hash:sub(9, 12) .. '-4' .. hash:sub(14, 16)
     .. '-8' .. hash:sub(18, 20) .. '-' .. hash:sub(21, 32)
-  local model = models[tier]
   local args = { '--mode', 'rpc', '--session-id', id,
     '--provider', model.provider, '--model', model.id }
-  if tier == 'opus' then vim.list_extend(args, { '--thinking', 'medium' }) end
+  if model.thinking then vim.list_extend(args, { '--thinking', model.thinking }) end
   if mode == 'question' then
     vim.list_extend(args, { '--tools', 'read,grep,find,ls', '--no-extensions' })
   end
-  local s = { project = p, mode = mode, tier = tier, stdin = stdin, stdout = stdout, stderr = stderr,
+  local s = { project = p, mode = mode, tier = tier, model = model, stdin = stdin, stdout = stdout, stderr = stderr,
     callbacks = {}, parser = { pending = '' }, stream = '', ready = false, stopping = false }
   local handle, startup
   local err
   handle, err = uv.spawn('pi', { args = args, cwd = p.root, stdio = { stdin, stdout, stderr } }, function(code)
     vim.schedule(function()
       s.ready = false
-      p.sessions[key] = nil
+      if p.sessions[key] == s then p.sessions[key] = nil end
       if startup and not startup:is_closing() then startup:stop(); startup:close() end
       for _, pipe in ipairs({ stdin, stdout, stderr }) do if not pipe:is_closing() then pipe:close() end end
       if handle and not handle:is_closing() then handle:close() end
@@ -447,11 +462,11 @@ local function start(p, mode, tier)
       end)
       dispatch(p)
     end
-    if tier == 'opus' and response.data.thinkingLevel ~= 'medium' then
-      send(s, { type = 'set_thinking_level', level = 'medium' }, function(result)
+    if model.thinking and response.data.thinkingLevel ~= model.thinking then
+      send(s, { type = 'set_thinking_level', level = model.thinking }, function(result)
         if not result.success then
           p.paused = true
-          append(p, 'Could not set Opus thinking level to medium; :AIRestart after exit')
+          append(p, 'Could not set ' .. tier .. ' thinking level to ' .. model.thinking .. '; :AIRestart after exit')
           render(p)
           s.stdin:shutdown()
           return
@@ -490,8 +505,8 @@ end
 
 enqueue_prompt = function(p, text)
   serial = serial + 1
-  local item = { key = 'manual-' .. serial, mode = 'edit', tier = 'luna',
-    label = 'Prompt (Luna): ' .. text:sub(1, 100), prompt = text }
+  local item = { key = 'manual-' .. serial, mode = 'edit', tier = 'cheap',
+    label = 'Prompt (cheap): ' .. text:sub(1, 100), prompt = text }
   core.enqueue(p.queue, p.seen, item)
   append(p, item.label .. ' [queued]')
   dispatch(p)
@@ -512,7 +527,7 @@ local function saved(buf)
       snippet[#snippet + 1] = i .. ': ' .. lines[i]:sub(1, 300)
     end
     local mode = marker.kind:sub(1, 1) == '?' and 'question' or 'edit'
-    local tier = #marker.kind == 2 and 'opus' or 'luna'
+    local tier = #marker.kind == 2 and 'expensive' or 'cheap'
     local prompt = string.format('Project-relative file: %s\nLine: %d\nRequest: %s\n%s\nNearby saved lines (bounded; inspect the actual saved file before %s):\n%s',
       relative, marker.number, marker.instruction,
       marker.context ~= '' and ('Additional context: ' .. marker.context:sub(1, 1200) .. '\n') or '',
@@ -584,21 +599,55 @@ function M.restart()
     return notify('Stop sessions with :AIStop, then retry :AIRestart.', vim.log.levels.WARN)
   end
   p.paused = false
-  start(p, 'edit', 'luna')
+  start(p, 'edit', 'cheap')
 end
 
-function M.setup()
+local function active_root()
+  return root_for(vim.api.nvim_get_current_buf())
+end
+
+---Drop (or mark, if running) sessions whose tier model changed, so the next
+---dispatch spawns a fresh pi session with the newly resolved model.
+local function refresh_models(p)
+  local models = resolver.resolve(p.root, setup_models)
+  for key, s in pairs(p.sessions) do
+    local want = models[s.tier]
+    if not want or want.provider ~= s.model.provider or want.id ~= s.model.id then
+      if p.active and p.active.session == s then
+        -- Let the current run finish; start() will swap in the new model next dispatch.
+        s.model_changed = true
+      else
+        s.stopping = true
+        if not s.stdin:is_closing() then s.stdin:shutdown() end
+        p.sessions[key] = nil
+      end
+    end
+  end
+end
+
+function M.setup(opts)
+  opts = opts or {}
+  setup_models = type(opts.models) == 'table' and opts.models or {}
   vim.keymap.set('n', '<leader>ai', M.toggle, { desc = 'Toggle project AI conversation' })
   vim.api.nvim_create_user_command('AIToggle', M.toggle, {})
   vim.api.nvim_create_user_command('AIStatus', M.status, {})
   vim.api.nvim_create_user_command('AIAbort', M.abort, {})
   vim.api.nvim_create_user_command('AIStop', M.stop, {})
   vim.api.nvim_create_user_command('AIRestart', M.restart, {})
+  vim.api.nvim_create_user_command('AIModels', function(cmd)
+    resolver.configure({ root = active_root(), global = cmd.bang })
+  end, { bang = true, desc = 'Pick cheap/expensive models from pi (bang = write global config)' })
+  vim.api.nvim_create_user_command('AIListModels', function(cmd)
+    resolver.list_models(cmd.fargs[1])
+  end, { nargs = '?', desc = 'List models pi can use (optional search filter)' })
   local group = vim.api.nvim_create_augroup('AIComments', { clear = true })
   vim.api.nvim_create_autocmd('BufWritePost', { group = group, callback = function(ev) saved(ev.buf) end })
   vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter' }, { group = group, callback = function(ev)
     local root = root_for(ev.buf)
-    if root and projects[root] and not vim.bo[ev.buf].modified then safe_checktime(projects[root]) end
+    if root and projects[root] and not vim.bo[ev.buf].modified then
+      safe_checktime(projects[root])
+      refresh_models(projects[root])
+    end
   end })
   vim.api.nvim_create_autocmd('VimLeavePre', { group = group, callback = function()
     shutting_down = true
