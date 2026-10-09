@@ -113,6 +113,10 @@ function M.stop(client)
   end)
 end
 
+function M.is_idle()
+  return next(clients) == nil
+end
+
 function M.shutdown()
   for client in pairs(clients) do M.stop(client) end
 end
