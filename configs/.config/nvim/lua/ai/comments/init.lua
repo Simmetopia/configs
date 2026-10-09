@@ -279,15 +279,25 @@ function M.abort()
   render(p)
 end
 
-function M.stop()
-  local p = current()
-  if not p then return end
+local function stop_project(p)
   p.paused, p.new_pending = true, nil
   clear_queue(p)
   if p.active then p.seen[p.active.key] = nil; p.active = nil end
   for _, s in pairs(p.sessions) do sessions.stop(s) end
   append(p, 'Stopping Pi RPC sessions')
   render(p)
+end
+
+function M.stop()
+  local p = current()
+  if p then stop_project(p) end
+end
+
+function M.stop_all()
+  for _, p in pairs(projects) do
+    stop_project(p)
+    view.hide(p.view)
+  end
 end
 
 function M.restart()

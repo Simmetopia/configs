@@ -137,11 +137,21 @@ function M.new()
   render(c)
 end
 
-function M.stop()
-  local c = chat()
+local function stop_chat(c)
   c.stopped, c.busy, c.queue, c.new_pending = true, false, {}, false
   sessions.stop(c.session)
   render(c)
+end
+
+function M.stop()
+  stop_chat(chat())
+end
+
+function M.stop_all()
+  for _, c in pairs(chats) do
+    stop_chat(c)
+    view.hide(c.view)
+  end
 end
 
 function M.restart()
