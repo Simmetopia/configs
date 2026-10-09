@@ -48,6 +48,15 @@ lua/ai/pi-extension/
   tools/webfetch.ts         thin tool registration and source/result formatting
 ```
 
+## Project switching (zoxide)
+
+This config ships a project switcher (`:Z`, `plugin/project.lua` + `lua/project/`)
+whose switch pipeline fires `User ProjectSwitchPre/Post` and — when
+`config.project.integrate` is enabled, the default — re-targets the project
+root shown by `<leader>aip`. The AI plugin never starts/stops Pi from the
+switcher; `prune_others` / `pause_active_on_switch` are opt-in. Full lifecycle
+and the `ev.data` event-payload contract: [project-feature.md](project-feature.md).
+
 Follow imports to find dependencies. Transport doesn't know about markers or
 windows. The UI doesn't launch Pi or change project files. Workflows coordinate
 their own queues through shared session and view APIs. Modules register no
@@ -64,14 +73,15 @@ Edit `plugin/ai.lua`:
 ```lua
 require('ai').setup({
   models = {
-    -- Keep the tier names: single markers select luna, doubled markers select opus.
-    luna = { provider = 'your-provider', id = 'your-model' },
-    opus = { provider = 'your-provider', id = 'your-reasoning-model', thinking = 'medium' },
-    sol = { provider = 'your-provider', id = 'your-chat-model' },
+    -- Tier names are cost-agnostic: single markers select cheap, doubled
+    -- markers select expensive, general chat uses chat.
+    cheap = { provider = 'your-provider', id = 'your-model' },
+    expensive = { provider = 'your-provider', id = 'your-reasoning-model', thinking = 'medium' },
+    chat = { provider = 'your-provider', id = 'your-chat-model' },
   },
   mappings = { project = '<leader>aip', chat = '<leader>aic' },
-  comments = { enabled = true, prompt_tier = 'opus' },
-  chat = { tier = 'sol' },
+  comments = { enabled = true, prompt_tier = 'expensive' },
+  chat = { tier = 'chat' },
   ui = { width = 0.8, height = 0.75, conceallevel = 0 },
   limits = { history_lines = 350, response_bytes = 20000 },
 })
@@ -80,8 +90,8 @@ require('ai').setup({
 Set either mapping to `false` to disable it. Set `comments.enabled = false` to
 stop automatic saved-marker dispatch (commands and manual prompts remain).
 Typed project prompts use Opus 5.5 by default; `prompt_tier` does not change
-marker routing. Single markers use Luna, doubled markers use Opus, and general
-web chat uses Sol with its separate web-only tool loadout.
+marker routing. Single markers use cheap, doubled markers use expensive, and
+general web chat uses chat with its separate web-only tool loadout.
 The default model names reflect this configuration's LEGO gateway; other users
 must supply models available in their own Pi configuration.
 

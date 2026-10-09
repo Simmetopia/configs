@@ -144,7 +144,7 @@ vim.cmd.edit({ bang = true })
 save('# process-exits AI!')
 wait_for(function() return #log() == 6 end)
 vim.wait(450)
--- Restart requires all tier sessions to exit, including the default Opus session.
+-- Restart requires all tier sessions to exit, including the default expensive-tier session.
 vim.cmd.AIStop()
 vim.wait(150)
 vim.cmd.AIRestart()

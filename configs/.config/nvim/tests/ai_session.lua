@@ -7,9 +7,9 @@ local protocol = require('ai.protocol')
 local root = vim.fn.getcwd()
 local function wait_for(fn) assert(vim.wait(15000, fn, 10), 'session test timed out') end
 
-local hash = vim.fn.sha256(root .. ':edit:luna')
-assert(session.id(root, 'edit', 'luna') == hash:sub(1, 8) .. '-' .. hash:sub(9, 12) .. '-4' .. hash:sub(14, 16) .. '-8' .. hash:sub(18, 20) .. '-' .. hash:sub(21, 32))
-assert(session.id(root, 'chat', 'luna') == 'chat-' .. vim.fn.sha256(root .. ':web-chat'):sub(1, 32))
+local hash = vim.fn.sha256(root .. ':edit:cheap')
+assert(session.id(root, 'edit', 'cheap') == hash:sub(1, 8) .. '-' .. hash:sub(9, 12) .. '-4' .. hash:sub(14, 16) .. '-8' .. hash:sub(18, 20) .. '-' .. hash:sub(21, 32))
+assert(session.id(root, 'chat', 'chat') == 'chat-' .. vim.fn.sha256(root .. ':web-chat'):sub(1, 32))
 assert(protocol.text({ content = 'string message' }) == 'string message')
 assert(protocol.text({ content = { { type = 'thinking', thinking = 'hidden' }, { type = 'text', text = 'answer' } } }) == 'answer')
 local stream = {}
@@ -26,7 +26,7 @@ for _, behavior in ipairs({ 'mismatch', 'timeout', 'history' }) do
   vim.env.AI_TEST_BEHAVIOR = behavior
   config.options.limits.startup_ms = behavior == 'timeout' and 100 or 10000
   local ready, exited, failure, history = false, false, nil, nil
-  local s = assert(session.start(root, 'chat', 'luna', {
+  local s = assert(session.start(root, 'chat', 'chat', {
     on_event = function() end, on_diagnostic = function() end,
     on_error = function(_, message) failure = message end,
     on_exit = function() exited = true end,

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Project-test shim for `zoxide`. Guarantees a test never reaches the user's
+# real frecency DB: if the caller (project.zoxide.capture) did not already set
+# an isolated _ZO_DATA_DIR, force a fresh throwaway one. The runner resolves
+# the real binary into ZO_REAL_BIN *before* prepending tests/bin to PATH and
+# execs it directly, so this shim never recurses into itself.
+set -euo pipefail
+if [ -z "${_ZO_DATA_DIR:-}" ]; then
+  export _ZO_DATA_DIR="$(mktemp -d -t zo-test)"
+fi
+if [ -n "${_ZO_REAL_BIN:-}" ]; then
+  exec "$_ZO_REAL_BIN" "$@"
+fi
+echo "zoxide-shim: _ZO_REAL_BIN not set" >&2
+exit 1

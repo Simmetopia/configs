@@ -30,8 +30,8 @@ local function ready(buf)
     and not text(buf):find('busy (', 1, true) and text(buf):find('queued: 0', 1, true)
 end
 for _, workflow in ipairs({
-  { open = 'AIChat', new = 'AIChatNew', stop = 'AIChatStop', restart = 'AIChatRestart', mode = 'chat', tier = 'sol' },
-  { open = 'AIToggle', new = 'AINew', stop = 'AIStop', restart = 'AIRestart', mode = 'edit', tier = 'opus' },
+  { open = 'AIChat', new = 'AIChatNew', stop = 'AIChatStop', restart = 'AIChatRestart', mode = 'chat', tier = 'chat' },
+  { open = 'AIToggle', new = 'AINew', stop = 'AIStop', restart = 'AIRestart', mode = 'edit', tier = 'expensive' },
 }) do
   vim.cmd(workflow.open)
   local buf = vim.api.nvim_get_current_buf()
@@ -54,7 +54,7 @@ for _, workflow in ipairs({
   wait_for(function() return #records() == count + 2 end)
   assert(records()[count + 2].session_id == fresh)
   assert(records()[count + 2].previous_messages == 0)
-  assert(records()[count + 2].model == (workflow.tier == 'sol' and 'gpt-6.1-sol-2026-09-29' or 'eu.anthropic.claude-opus-5-5'))
+  assert(records()[count + 2].model == (workflow.tier == 'chat' and 'gpt-6.1-sol-2026-09-29' or 'eu.anthropic.claude-opus-5-5'))
   wait_for(function() return ready(buf) and text(buf):find('done', 1, true) end)
   if vim.env.AI_TEST_HISTORY_DIR then
     assert(vim.fn.filereadable(vim.env.AI_TEST_HISTORY_DIR .. '/' .. old .. '.json') == 1, 'old transcript removed')

@@ -6,14 +6,22 @@ local package_root = vim.fs.dirname(source)
 M.defaults = {
   executable = 'pi',
   models = {
-    luna = { provider = 'lego-openai', id = 'gpt-6-luna-2026-09-22' },
-    sol = { provider = 'lego-openai', id = 'gpt-6.1-sol-2026-09-29' },
-    opus = { provider = 'lego-anthropic', id = 'eu.anthropic.claude-opus-5-5', thinking = 'medium' },
+    cheap = { provider = 'lego-openai', id = 'gpt-6-luna-2026-09-22' },
+    chat = { provider = 'lego-openai', id = 'gpt-6.1-sol-2026-09-29' },
+    expensive = { provider = 'lego-anthropic', id = 'eu.anthropic.claude-opus-5-5', thinking = 'medium' },
   },
   mappings = { project = '<leader>aip', chat = '<leader>aic' },
-  comments = { enabled = true, prompt_tier = 'opus' },
+  comments = { enabled = true, prompt_tier = 'expensive' },
+  -- Project switcher integration (project.switch / plugin/project.lua).
+  -- integrate=false turns off ONLY the retargeting side effects of a switch
+  -- (this field was settled on in docs/project-feature.md Open Questions;
+  -- "Recommended on"): when a ProjectSwitchPost fires, it re-targets the root
+  -- shown by <leader>aip to the new project. The two flags below are the
+  -- explicitly destructive opts (stop/drop Pi sessions) and stay off by
+  -- default. Only one of them runs; prune_others wins.
+  project = { integrate = true, prune_others = false, pause_active_on_switch = false },
   chat = {
-    tier = 'sol',
+    tier = 'chat',
     search_extension = 'npm:pi-web-search@1.6.0',
     extension = vim.fs.joinpath(package_root, 'pi-extension', 'index.ts'),
   },
@@ -33,7 +41,7 @@ M.options = vim.deepcopy(M.defaults)
 
 function M.setup(options)
   local result = vim.tbl_deep_extend('force', vim.deepcopy(M.defaults), options or {})
-  for _, tier in ipairs({ result.comments.prompt_tier, result.chat.tier, 'luna', 'opus' }) do
+  for _, tier in ipairs({ result.comments.prompt_tier, result.chat.tier, 'cheap', 'expensive' }) do
     local model = result.models[tier]
     assert(model and type(model.provider) == 'string' and type(model.id) == 'string',
       'AI: invalid model tier ' .. tostring(tier))

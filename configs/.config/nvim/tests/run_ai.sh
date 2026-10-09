@@ -4,8 +4,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="$PWD/tests/bin:$PATH"
 export AI_TEST_LOG
-AI_TEST_LOG="$(mktemp -t nvim-ai-tests)"
-test_state="$(mktemp -d -t nvim-ai-state)"
+AI_TEST_LOG="$(mktemp /tmp/nvim-ai-tests.XXXXXX)"
+test_state="$(mktemp -d /tmp/nvim-ai-state.XXXXXX)"
 export XDG_STATE_HOME="$test_state/state"
 export AI_TEST_HISTORY_DIR="$test_state/history"
 mkdir -p "$AI_TEST_HISTORY_DIR"
