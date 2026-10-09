@@ -35,18 +35,7 @@ local function project(root)
 end
 
 local function current()
-  local buf_root = roots.current()
-  local explicit, left = roots.selected()
-  if explicit and (buf_root == nil or buf_root == explicit or buf_root == left) then
-    -- A project switch re-targeted us: the current buffer is either already
-    -- in the new root, parked on the project we just left (the trap), or
-    -- isn't a file. Honor the switch so <leader>aip follows the new project.
-    -- Only when the user opens an unrelated project's buffer does the buffer
-    -- root win again (self-healing).
-    selected = explicit
-  else
-    selected = buf_root or selected
-  end
+  selected = roots.current() or selected
   return selected and project(selected)
 end
 
@@ -301,30 +290,13 @@ end
 
 function M.stop()
   local p = current()
-  if not p then return end
-  stop_project(p)
+  if p then stop_project(p) end
 end
 
--- Opt-in (config.project.prune_others): stop Pi sessions for every resident
--- project except `keep`, then drop the stopped ones from the map so they are
--- not re-dispatched. Handled-marker fingerprints (storage) are retained.
-function M.prune_others(keep)
-  for root, p in pairs(projects) do
-    if root ~= keep then
-      stop_project(p)
-      view.hide(p.view)
-      projects[root] = nil
-    end
-  end
-end
-
--- Opt-in (config.project.pause_active_on_switch): stop Pi sessions for every
--- resident project except `keep` (the one we switched to), keeping the
--- projects in the map and their queues/persisted sessions for :AIRestart.
--- The left project is by definition one of the non-keep roots.
-function M.stop_all(keep)
-  for root, p in pairs(projects) do
-    if root ~= keep then stop_project(p) end
+function M.stop_all()
+  for _, p in pairs(projects) do
+    stop_project(p)
+    view.hide(p.view)
   end
 end
 

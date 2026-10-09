@@ -12,14 +12,6 @@ M.defaults = {
   },
   mappings = { project = '<leader>aip', chat = '<leader>aic' },
   comments = { enabled = true, prompt_tier = 'expensive' },
-  -- Project switcher integration (project.switch / plugin/project.lua).
-  -- integrate=false turns off ONLY the retargeting side effects of a switch
-  -- (this field was settled on in docs/project-feature.md Open Questions;
-  -- "Recommended on"): when a ProjectSwitchPost fires, it re-targets the root
-  -- shown by <leader>aip to the new project. The two flags below are the
-  -- explicitly destructive opts (stop/drop Pi sessions) and stay off by
-  -- default. Only one of them runs; prune_others wins.
-  project = { integrate = true, prune_others = false, pause_active_on_switch = false },
   chat = {
     tier = 'chat',
     search_extension = 'npm:pi-web-search@1.6.0',

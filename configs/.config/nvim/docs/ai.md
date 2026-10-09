@@ -48,15 +48,6 @@ lua/ai/pi-extension/
   tools/webfetch.ts         thin tool registration and source/result formatting
 ```
 
-## Project switching (zoxide)
-
-This config ships a project switcher (`:Z`, `plugin/project.lua` + `lua/project/`)
-whose switch pipeline fires `User ProjectSwitchPre/Post` and — when
-`config.project.integrate` is enabled, the default — re-targets the project
-root shown by `<leader>aip`. The AI plugin never starts/stops Pi from the
-switcher; `prune_others` / `pause_active_on_switch` are opt-in. Full lifecycle
-and the `ev.data` event-payload contract: [project-feature.md](project-feature.md).
-
 Follow imports to find dependencies. Transport doesn't know about markers or
 windows. The UI doesn't launch Pi or change project files. Workflows coordinate
 their own queues through shared session and view APIs. Modules register no

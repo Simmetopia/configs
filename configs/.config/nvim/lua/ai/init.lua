@@ -24,22 +24,6 @@ function M.setup(options)
     vim.api.nvim_create_autocmd('BufWritePost', { group = group, callback = function(ev) comments.saved(ev.buf) end })
     vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter' }, { group = group, callback = function(ev) comments.refresh(ev.buf) end })
   end
-  -- Opt-in project-switcher integration (config.project.integrate): re-target
-  -- the "selected" AI root when the user runs project.switch. The switcher
-  -- itself only fires events; it never spawns/signals Pi. See
-  -- docs/project-feature.md for the scenario matrix and the destructive opts.
-  if config.project and config.project.integrate then
-    vim.api.nvim_create_autocmd('User', { group = group, pattern = 'ProjectSwitchPost', callback = function(ev)
-      local new = ev.data and ev.data.new
-      if not new then return end
-      require('ai.project').select(new, ev.data and ev.data.old)
-      if config.project.prune_others then
-        require('ai.comments').prune_others(new)
-      elseif config.project.pause_active_on_switch then
-        require('ai.comments').stop_all(new)
-      end
-    end })
-  end
   vim.api.nvim_create_autocmd('VimResized', { group = group, callback = require('ai.ui.view').resize })
   vim.api.nvim_create_autocmd('VimLeavePre', { group = group, callback = require('ai.rpc').shutdown })
   configured = true

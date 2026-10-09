@@ -1,16 +1,6 @@
 -- Canonical paths shared by comments, chat, and scratch conversation buffers.
 local M = {}
 
--- Explicit re-target set when a project switch happens (opt-in via
--- config.project.integrate). Wins over the (possibly stale) root derived from
--- the current buffer so <leader>aip follows the switch; see
--- comments.current() for the resolution rule. `old` is the project we just
--- left, letting comments distinguish "the buffer is parked on the project we
--- left" (honor the switch) from "the user opened an unrelated project's
--- file" (the buffer wins).
-local selected
-local selected_old
-
 function M.inside(path, root)
   return root == '/' or path:sub(1, #root + 1) == root .. '/'
 end
@@ -34,17 +24,6 @@ end
 
 function M.chat_root()
   return M.current() or vim.uv.fs_realpath(vim.fn.getcwd()) or vim.fn.getcwd()
-end
-
--- Re-target the "selected" root after a project switch. Both args are
--- normalized to realpaths; safe to call with nil (clears nothing).
-function M.select(root, old)
-  selected = root and (vim.uv.fs_realpath(root) or root) or nil
-  selected_old = old and (vim.uv.fs_realpath(old) or old) or nil
-end
-
-function M.selected()
-  return selected, selected_old
 end
 
 return M
