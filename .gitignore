@@ -1,16 +1,39 @@
+# ── Build dependencies (NEVER commit) ───────────────────────
+node_modules/
+
+# ── App-managed / secret-bearing config dirs ──────────────
+# These live in ~/.config and are managed by their own apps,
+# NOT symlinked via stow or tracked here.
+configs/.config/gh/
+configs/.config/gsconnect/
+configs/.config/github-copilot/
+configs/.config/turso/
+configs/.config/exercism/
+configs/.config/chromium/
+configs/.config/aider/
+configs/.config/configstore/
+configs/.config/yarn/
+configs/.config/htop/
+configs/.config/neofetch/
+configs/.config/pamac/
+configs/.config/rtx/
+
+# ── Machine-local / auto-generated files ───────────────────
+configs/.config/dconf/
+configs/.config/ibus/
+configs/.config/manjaro/
+configs/.config/mimeapps.list
+configs/.config/monitors.xml
+configs/.config/monitors.xml~
+configs/.config/user-dirs.dirs
+configs/.config/user-dirs.locale
+configs/.config/xdg-terminals.list
+configs/.config/.gsd-keyboard.settings-ported
+configs/.config/pavucontrol.ini
+
+# ── Editor / misc ──────────────────────────────────────────
 JetBrains/
 ookla/
 ~
-
-
-configs/.config/ibus/bus/e7a91a3a77b542de938bb73d3ace53b1-unix-0
-/configs/.config/chromium
-/configs/.config/dconf
-/configs/.config/manjaro
-/configs/.config/mimeapps.list
-/configs/.config/monitors.xml
-/configs/.config/user-dirs.dirs
-/configs/.config/user-dirs.locale
-/configs/.config/xdg-terminals.list
-/todo.org
 .aider*
+todo.org
