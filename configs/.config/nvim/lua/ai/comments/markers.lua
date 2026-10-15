@@ -14,6 +14,7 @@ local prefixes = {
   toml = { '#' },
   conf = { '#', ';' },
   javascript = { '//' },
+  rescript = { '//' },
   typescript = { '//' },
   javascriptreact = { '//' },
   typescriptreact = { '//' },

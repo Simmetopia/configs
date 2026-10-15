@@ -8,7 +8,7 @@ function tlp-profile
             and sudo tlp start
             and sudo tlp power-saver
             and echo "Switched to $argv[1] profile"
-        case full
+        case full normal perf
             sudo cp "$profile_dir/$argv[1].conf" $tlp_conf
             and sudo tlp start
             and echo "Switched to $argv[1] profile"
@@ -16,7 +16,7 @@ function tlp-profile
             if test -f $tlp_conf
                 set -l current (basename (readlink -f $tlp_conf 2>/dev/null) .conf)
                 # Check which profile matches
-                for profile in quiet battery full
+                for profile in quiet battery full normal perf
                     if diff -q "$profile_dir/$profile.conf" $tlp_conf >/dev/null 2>&1
                         echo "Current profile: $profile"
                         return 0
@@ -27,7 +27,7 @@ function tlp-profile
                 echo "No profile active"
             end
         case '*'
-            echo "Usage: tlp-profile [quiet|battery|full|status]"
+            echo "Usage: tlp-profile [quiet|battery|normal|full|perf|status]"
             return 1
     end
 end

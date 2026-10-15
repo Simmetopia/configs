@@ -1,5 +1,7 @@
 [tools]
 dotnet = "9"
+lazygit = "latest"
+pi = "1.1.0"
 rust = "latest"
 usage = "latest"
 zoxide = "latest"

@@ -15,8 +15,11 @@ function M.scan(buf, lines, ft)
       local function visit(node)
         if node:type():find('comment', 1, true) then
           local start_row, start_col, end_row, end_col = node:range()
-          if start_row == end_row and lines[start_row + 1] then
-            local fragment = lines[start_row + 1]:sub(start_col + 1, end_col)
+          if lines[start_row + 1] then
+            -- Some grammars (rescript) include the trailing newline in line-comment
+            -- nodes, so the range spans two rows; only the first row can hold the marker.
+            local stop = start_row == end_row and end_col or #lines[start_row + 1]
+            local fragment = lines[start_row + 1]:sub(start_col + 1, stop)
             -- The root grammar can have a different name from the filetype.
             -- Never use the parent filetype to parse an injected language.
             local marker = core.parse_comment(fragment, language)

@@ -22,7 +22,8 @@ set -gx fish_user_paths \
     $HOME/.fly/bin \
     $HOME/.local/bin \
     $HOME/.dotnet \
-    $HOME/.dotnet/tools
+    $HOME/.dotnet/tools \
+    $HOME/.fleetctl
 
 set -gx FLYCTL_INSTALL "$HOME/.fly"
 set -gx DOTNET_ROOT "$HOME/.dotnet"
