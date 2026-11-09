@@ -429,7 +429,96 @@ git add lua/ai/chat.lua tests/ai_chat.lua
 git commit -m "feat(ai): web chat emits typed timeline entries"
 ```
 
+### Task 4b: Persistent message folding and opt-in restored history
+
+Added after monkey test 2. See the spec's Keymaps **Amendment**.
+
+**Files:**
+- Modify: `lua/ai/ui/timeline.lua`, `lua/ai/ui/view.lua`, `lua/ai/ui/markdown.lua` (`setup`: `vim.wo[win].foldenable = false`), `lua/ai/config.lua` (`ui.restore_history = false`), `lua/ai/chat.lua` (`on_ready`), `tests/ai_timeline.lua`, `tests/ai_view.lua`
+
+**Interfaces:**
+- Consumes: Task 1/3 `timeline.render`, `view` API.
+- Produces:
+  - `timeline.render(entries, opts)`
+    - `opts` gains `folded = { [uid] = true }`
+    - the result gains `messages = { { first = row0, last = row0, key = uid } }`
+      (non-streaming messages only)
+    - each `groups[i]` gains `last = row0`
+  - `view.folded` holds the per-view folded message set; `view.clear`
+    resets it together with `view.open`
+  - `view.hold_history(view, entries)`
+    - stores restored entries for later
+    - adds the info event `('Resumed session — %d earlier messages hidden (H to show)'):format(#entries)`
+      when `#entries > 0`
+  - `view.show_history(view)`
+    - inserts the held entries before all current entries (index updated),
+      clears the held set, trims, renders
+    - does nothing when nothing is held
+  - Buffer keys:
+    - `za`/`<Tab>` toggle, `zc` close, `zo` open the unit containing the cursor
+    - `zM`/`zR` affect all units
+    - `H` calls `show_history`
+
+- [ ] **Step 1: Tests in `tests/ai_timeline.lua`**
+  - `t.render({ pi }, { width = 80, open = {}, folded = { [pi.uid] = true } })`
+    - the result has exactly 2 lines: `'## Pi · claude-opus-5-5'` then `''`
+    - one right_align chunk contains `'▸ 1 lines'`
+  - Unfolded: `out.messages[1]` equals `{ first = 0, last = 1, key = pi.uid }`
+    (header plus 1 body row; the trailing blank row is excluded).
+  - The streaming message never appears in `messages`.
+  - An expanded 3-event group has `groups[1].last == 3`.
+
+- [ ] **Step 2: Tests in `tests/ai_view.lua`**
+  - **`fold_persists`**
+    - add a user message and a 3-line assistant message
+    - put the cursor on the assistant's 2nd body line and press `za`
+    - the buffer shows the assistant band without its body, and the cursor
+      is on the band row
+    - `view.event(v, 'info', 'x')`, then render with a streaming chunk
+    - the assistant is still folded
+    - `zR` unfolds it; `zM` folds both messages
+  - **Native folds:** `vim.wo[v.win].foldenable == false`.
+  - **History is held:** `hold_history` with 2 restored messages gives an
+    info entry whose text contains `'2 earlier messages hidden'`.
+  - **History is shown:**
+    - with `H`, the first two entries are the restored ones (in order),
+      followed by the earlier entries
+    - a second `H` adds nothing
+  - **No history:** `hold_history(v, {})` adds no entry.
+
+- [ ] **Step 3: Run, expect failure**
+
+Run: `bash tests/run_ai.sh ai_timeline ai_view`. Expected: FAIL.
+
+- [ ] **Step 4: Implement**
+
+- **Folded rendering:** a folded message renders only its header row plus
+  the separator blank.
+- **Header chunk:** the right-aligned chunk is `{ icons.fold_closed .. (' %d lines  '):format(n), 'AIBandMeta' }`,
+  followed by the existing time chunk, in one `virt_text` list.
+- **`chat.lua` `on_ready`:** build the restored entries with
+  `timeline.message({ role, text, restored = true, model })`. Then:
+  - if `require('ai.config').options.ui.restore_history`, `view.add` each
+  - otherwise `view.hold_history(c.view, entries)`
+- **`config.lua`:** add `restore_history = false` to `config.defaults.ui`.
+
+- [ ] **Step 5: Run, expect pass**
+
+Run: `bash tests/run_ai.sh ai_timeline ai_view ai_markdown ai_config ai_help ai_profile_callbacks`. Expected: all pass. Confirm that `tests/ai_chat.lua` parses.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add lua/ai/ui/timeline.lua lua/ai/ui/view.lua lua/ai/ui/markdown.lua lua/ai/config.lua lua/ai/chat.lua tests/ai_timeline.lua tests/ai_view.lua
+git commit -m "feat(ai): persistent message folding and opt-in restored history"
+```
+
 ### Task 5: Project conversation and selection jobs emit classified entries
+
+> Amended by Task 4b: the project `on_ready` restored history uses the same
+> `ui.restore_history` / `view.hold_history` pattern as chat, and
+> `tests/ai_new.lua:67` must then check for the
+> `'earlier messages hidden'` event instead of `'Pi · restored'`.
 
 **Files:**
 - Modify: `lua/ai/comments/init.lua`, `lua/ai/help.lua`, `tests/ai_comments.lua`, `tests/ai_new.lua`, `tests/ai_help.lua` (only if it inspects project-view text)

@@ -163,8 +163,38 @@ the last line.
 
 Existing `i`, `q`, `<C-l>` are unchanged. New:
 
-- `za` / `<Tab>`: toggle the event group under the cursor (no-op elsewhere).
+- `za` / `<Tab>`: toggle the message or event group under the cursor (no-op elsewhere).
 - `zR` / `zM`: open / close all event groups in this view.
+
+**Amendment (2026-11-09, after monkey test 2; approved by the user):**
+
+- **Native folds are disabled in the view.** The user's global Tree-sitter
+  folds made `zc` fold `## …` sections, and those folds reopened on every
+  re-render. The view window sets `foldenable = false`.
+- **Whole messages fold.** Folding is renderer-level and persists across
+  re-renders, new entries and streaming; only `<C-l>` resets it.
+  - Every non-streaming message (band plus body) is foldable, and so is
+    every event group.
+  - A folded message renders only its band line. The right-aligned
+    virt text becomes `▸ N lines  HH:MM`, where N is the hidden body line
+    count.
+  - Messages start open; event groups start closed.
+- **Fold keys:**
+  - `za`/`<Tab>` toggles the unit (message or group) containing the cursor,
+    from any of its rows.
+  - `zc`/`zo` close and open it.
+  - `zM` folds every message and closes every group.
+  - `zR` unfolds every message and opens every group.
+  - After a fold, the cursor moves to the unit's first row.
+- **Restored history is opt-in.** The new option `ui.restore_history`
+  defaults to `false`. Pi still resumes the session context; only the
+  display changes.
+  - On connect with the option off, restored messages are held back and one
+    info event is shown: `Resumed session — N earlier messages hidden (H to show)`.
+    There is no event when N is 0.
+  - `H` in the view inserts the held-back messages before all current
+    entries, then trims as usual. With nothing held back, `H` does nothing.
+  - With `ui.restore_history = true`, behaviour is as before.
 
 The help strings passed by workflows become compact (`i prompt · za fold · ^L clear · q hide`);
 the `:AINew`… command list moves to `:help`-style docs (`docs/ai.md`) to keep
