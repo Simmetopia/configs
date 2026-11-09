@@ -88,6 +88,7 @@ function M.setup(options)
     vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter' }, { group = group, callback = function(ev) comments.refresh(ev.buf) end })
   end
   vim.api.nvim_create_autocmd('ColorScheme', { group = group, callback = help.highlights })
+  vim.api.nvim_create_autocmd('ColorScheme', { group = group, callback = require('ai.ui.highlights').setup })
   vim.api.nvim_create_autocmd('VimResized', { group = group, callback = require('ai.ui.view').resize })
   vim.api.nvim_create_autocmd('VimLeavePre', { group = group, callback = require('ai.rpc').shutdown })
   configured = true

@@ -30,7 +30,7 @@ trap 'rm -f "$AI_TEST_LOG"; rm -rf "$test_state"' EXIT
 run_group() {
   case "$1" in
     ai_web) node tests/ai_web.mjs ;;
-    ai_config|ai_profiles|ai_profiles_busy|ai_profile_callbacks|ai_view|ai_tools|ai_markdown|ai_session|ai_chat|ai_comments|ai_comments_storage|ai_new|ai_help|ai_comments_live|ai_comments_live_setup)
+    ai_config|ai_profiles|ai_profiles_busy|ai_profile_callbacks|ai_view|ai_timeline|ai_tools|ai_markdown|ai_session|ai_chat|ai_comments|ai_comments_storage|ai_new|ai_help|ai_comments_live|ai_comments_live_setup)
       nvim --headless -u NONE -l "tests/$1.lua" ;;
     *) printf 'unknown AI test group: %s\n' "$1" >&2; return 2 ;;
   esac
@@ -45,6 +45,7 @@ else
   run_group ai_profiles_busy
   run_group ai_profile_callbacks
   run_group ai_view
+  run_group ai_timeline
   run_group ai_tools
   run_group ai_markdown
   run_group ai_session
