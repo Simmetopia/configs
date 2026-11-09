@@ -15,6 +15,6 @@ require('ai').setup({
   },
   mappings = { project = '<leader>aip', chat = '<leader>aic', help = '<leader>aih' },
   help = { role = 'cheap', bang_role = 'expensive' },
-  comments = { prompt_role = 'cheap' },
+  comments = { prompt_role = 'expensive' },
   chat = { role = 'chat', search_extension = local_search_entry },
 })
