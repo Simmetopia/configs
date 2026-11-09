@@ -121,6 +121,16 @@ require('ai.profiles').switch('studio', function(ok, why) refused, refusal = ok,
 assert(refused == false and refusal:find('project conversation has active or queued work', 1, true))
 assert(require('ai.profiles').status().active == 'workbench')
 wait_for(function() return #log() == 1 end)
+do -- the dispatched marker appears as a labelled user message (marker from lines 117-118: '# first AI!', line 1)
+  local first_root, first_path = require('ai.project').for_buffer(buf)
+  local expected_label = 'AI! ' .. first_path:sub(#first_root + 2) .. ':1'
+  local first_project = comment_project(first_root)
+  wait_for(function()
+    for _, e in ipairs(require('ai.ui.view').entries(first_project.view)) do
+      if e.kind == 'message' and e.role == 'user' and e.label == expected_label and e.text == 'first' then return true end
+    end
+  end)
+end
 save('# first AI!')
 save('# changed AI!')
 save('x = 1 # question AI?')
