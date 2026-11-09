@@ -42,10 +42,19 @@ by this Neovim instance; no repository scan occurs.
 
 - `<leader>aip` / `:AIToggle`: show/hide the project conversation. `q` hides it;
   hiding never stops Pi. Press `i` inside the conversation to type an ordinary
-  (edit-capable, Opus 5.5 with medium thinking) prompt in the input float; `<Enter>` submits, `<Esc>` closes it
+  (edit-capable, using the `comments.prompt_role` model) prompt in the input float; `<Enter>` submits, `<Esc>` closes it
   without discarding your draft. Paste multiple lines or use insert-mode `<Ctrl-J>`
   for a newline; `<Ctrl-S>` sends the whole draft in normal or insert mode.
   Both floats reposition automatically when Neovim is resized.
+  The title is in the top border; connection status and a short key hint are in
+  the bottom border (a winbar when `ui.border = 'none'`).
+- Conversation navigation, in both `<leader>aip` and `<leader>aic`: `za` or
+  `<Tab>` toggles the message or event group under the cursor, `zc`/`zo` close/open
+  it, `zM`/`zR` fold/unfold everything, and `H` shows earlier messages held back
+  on reconnect. Info and status lines collapse into a "▸ N events" group;
+  warnings and errors stay visible. By default a reconnect hides earlier
+  messages behind a "Resumed session" notice (Pi still has the context); set
+  `ui.restore_history = true` to show them.
 - `<Ctrl-L>` in either conversation clears its displayed history. `:AIClear`
   clears project output; `:AIChatClear` clears web-chat output. This does not
   reset Pi's conversation context, discard queued requests, or abort a response.
@@ -101,7 +110,8 @@ in the float without copying their potentially sensitive text into notifications
 ## General web chat
 
 `<leader>aic` / `:AIChat` opens a separate project-scoped chat float. Press `i`
-to enter a prompt, `<Enter>` to send, `q` to hide. `:AIChatStop` shuts down its
+to enter a prompt, `<Enter>` to send, `q` to hide. The navigation keys above
+also work here. `:AIChatStop` shuts down its
 Pi process; `:AIChatRestart` reconnects after it exits. The conversation uses
 its own persisted project session, independent from comment requests and their
 queue. From a scratch buffer it uses Neovim's current directory.

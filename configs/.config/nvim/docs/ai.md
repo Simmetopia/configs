@@ -41,8 +41,10 @@ lua/ai/
     files.lua               disk/buffer comparison and exact-marker cleanup
     storage.lua             handled-marker fingerprints
   ui/
-    view.lua                shared float, input buffer, log and auto-scroll
-    markdown.lua            Markdown parser/injections and code-block decoration
+    view.lua                shared float, input buffer, typed entries, borders, input
+    timeline.lua            pure renderer: message bands, tool badges, event groups
+    highlights.lua          AI* highlight groups and icon defaults
+    markdown.lua            conversation buffer/window setup and Markdown injections
 lua/ai/pi-extension/
   index.ts                  the single local Pi extension entry point
   package.json              explicit Pi package manifest
@@ -81,7 +83,12 @@ require('ai').setup({
   help = { role = 'cheap', bang_role = 'expensive' },
   comments = { enabled = true, prompt_role = 'cheap' },
   chat = { role = 'chat', search_extension = '/absolute/path/to/pi-web-search/src/index.ts' },
-  ui = { width = 0.8, height = 0.75, conceallevel = 0 },
+  ui = {
+    width = 0.8, height = 0.75, conceallevel = 0,
+    restore_history = false, -- true: show earlier messages on reconnect
+    icons = { user = '', assistant = '󰚩', warn = '', error = '', running = '⋯', ok = '✓', failed = '✗',
+      fold_closed = '▸', fold_open = '▾', band = '▓▓' }, -- partial overrides are merged; use ASCII without a Nerd Font
+  },
   limits = { history_lines = 350, response_bytes = 20000 },
 })
 ```
@@ -155,13 +162,56 @@ these checks can overwrite unsaved edits or dispatch the wrong request.
 
 ### Markdown and code snippets
 
-Edit `ui/markdown.lua` for presentation and `ui/view.lua` for layout/input.
+Edit `ui/timeline.lua` for presentation and `ui/view.lua` for layout/input.
 The buffer stays `ft=markdown` everywhere. Fenced languages are Tree-sitter
 injections: install `markdown`, `markdown_inline`, and each code language's
 parser. In this configuration the existing tree-sitter-manager ensures the
 Markdown and Python parsers; install others with `:TSInstall <language>`.
 Missing parsers do not prevent the float opening, but that language won't have
 Tree-sitter highlighting. Fence tags are visible by default for readability.
+
+### Conversation view
+
+Both conversation floats show messages as coloured bands (`You · Prompt`,
+`You · AI! path:line` for saved markers, and the short model name for
+assistant replies). Tool calls appear as badges that change from `⋯` to `✓` or
+`✗`. Info and status lines collapse into a "▸ N events" group; warnings and
+errors are coloured and never folded. The title is in the top border; status
+and a key hint are in the bottom border (a winbar when `ui.border = 'none'`).
+
+Keys in both buffers: `i` opens the input, `q` hides, `<C-l>` clears the
+display. `za`/`<Tab>` toggle the message or event group under the cursor,
+`zc`/`zo` close/open it, `zM`/`zR` fold/unfold all, and `H` shows earlier
+messages held back on reconnect (see `ui.restore_history`). Folding is
+implemented by the renderer, not Neovim folds (`foldenable` is off).
+
+Commands (no longer listed in the window):
+
+- Project: `:AIToggle`, `:AINew`, `:AIStatus`, `:AIAbort`, `:AIStop`,
+  `:AIRestart`, `:AIClear`
+- Web chat: `:AIChat`, `:AIChatNew`, `:AIChatStop`, `:AIChatRestart`,
+  `:AIChatClear`
+
+Highlight groups link to standard groups with `default = true`, so override them
+with `vim.api.nvim_set_hl`:
+
+| Group | Default link |
+|-------|--------------|
+| `AIBandUser` | `DiffAdd` |
+| `AIBandAssistant` | `DiffChange` |
+| `AIBandRestored` | `CursorLine` |
+| `AIBandMeta` | `Comment` |
+| `AIToolRead` | `Comment` |
+| `AIToolExec` | `DiagnosticInfo` |
+| `AIToolWrite` | `DiagnosticWarn` |
+| `AIToolRunning` | `DiagnosticHint` |
+| `AIToolOk` | `DiagnosticOk` |
+| `AIToolFailed` | `DiagnosticError` |
+| `AIEvent` | `Comment` |
+| `AIEventWarn` | `DiagnosticWarn` |
+| `AIEventError` | `DiagnosticError` |
+| `AIFold` | `Folded` |
+| `AICode` | `CursorLine` |
 
 ## Request lifecycle
 
