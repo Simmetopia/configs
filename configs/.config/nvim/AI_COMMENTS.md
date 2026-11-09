@@ -58,10 +58,10 @@ by this Neovim instance; no repository scan occurs.
 - `<Ctrl-L>` in either conversation clears its displayed history. `:AIClear`
   clears project output; `:AIChatClear` clears web-chat output. This does not
   reset Pi's conversation context, discard queued requests, or abort a response.
-  Active responses remain visible; reconnecting may restore persisted history.
+  Active responses remain visible; earlier history after a reconnect is controlled by `ui.restore_history` (or `H`).
 - `:AIChatNew`: start a fresh Sol chat for a new topic, clearing old output
   and the draft without carrying over conversation context.
-- `:AINew`: start a fresh Opus project conversation (also used by `AI!!`).
+- `:AINew`: start a fresh project conversation for the `comments.prompt_role` edit session (also used by `AI!!`).
   Luna edit/question and Opus question histories remain unchanged.
   New-conversation commands refuse while work is active, queued, or connecting;
   finish it or stop and wait for exit first. Old Pi transcripts are kept on disk,
@@ -77,8 +77,11 @@ by this Neovim instance; no repository scan occurs.
 Pi is started on demand in RPC mode with the project root as its working
 directory. Edit/question and Luna/Opus histories are **four separate persisted
 project sessions**, selected by stable session IDs. They resume on Neovim/Pi restart;
-the float restores recent assistant messages on reconnection. Ordinary prompts
-go to the Opus edit session, shared with `AI!!` requests. Sol is reserved for
+on reconnection the float hides earlier messages behind a "Resumed session — N
+earlier messages hidden (H to show)" notice; `H` shows them and
+`ui.restore_history = true` restores them automatically. Pi resumes context either
+way. Ordinary prompts go to the edit session of the `comments.prompt_role` model,
+shared with `AI!` requests (with `expensive`, the Opus session shared with `AI!!`). Sol is reserved for
 general web chat, not comment requests. Questions of either tier use `--tools read,grep,find,ls
 --no-extensions`: Pi has no write/bash tools or extension tools in that session.
 This also means questions cannot use extension commands or share edit-session
