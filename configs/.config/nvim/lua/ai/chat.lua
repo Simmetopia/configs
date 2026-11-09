@@ -10,7 +10,7 @@ local chats = {}
 local dispatch, start
 
 local function render(c) view.render(c.view) end
-local function append(c, text) view.append(c.view, text) end
+local function append(c, text) view.event(c.view, 'info', text) end
 local function owns(c) return profiles.allows(c.token) end
 local function same_token(left, right)
   return type(left) == 'table' and type(right) == 'table'
@@ -35,7 +35,7 @@ local function chat()
     return c
   end
   c = { root = root, profile = profile, token = profiles.token(), queue = {}, stopped = false, busy = false }
-  c.view = view.new(root, 'Pi web chat (' .. profile.name .. ')', 'i: prompt  Ctrl-L: clear  q: hide  :AIChatNew / :AIChatStop / :AIChatRestart',
+  c.view = view.new(root, 'Pi web chat (' .. profile.name .. ')', 'i prompt · za fold · ^L clear · q hide',
     function()
       local status = c.new_pending and 'Starting new chat' or c.busy and 'Busy' or c.stopped and 'Stopped (:AIChatRestart)'
         or c.session and not c.session.ready and 'Connecting' or 'Ready'
@@ -70,13 +70,13 @@ local function record(c, session, event, token)
     protocol.update(session, event.assistantMessageEvent or {})
   elseif event.type == 'message_end' and event.message and event.message.role == 'assistant' then
     local text = protocol.text(event.message)
-    if text ~= '' then view.message(c.view, 'Pi', protocol.clip(text, require('ai.config').options.limits.response_bytes)) end
+    if text ~= '' then view.message(c.view, 'assistant', protocol.clip(text, require('ai.config').options.limits.response_bytes)) end
     if event.message.stopReason == 'error' then append(c, 'Model error: check provider credentials.') end
     session.stream, session.blocks = '', {}
   elseif event.type == 'tool_execution_start' then
-    append(c, tools.start(session, event))
+    view.add(c.view, tools.start(session, event))
   elseif event.type == 'tool_execution_end' then
-    append(c, tools.finish(session, event))
+    view.add(c.view, tools.finish(session, event))
   elseif event.type == 'agent_settled' and c.busy and c.active_request and c.active_request.session == session then
     local request = c.active_request
     c.settled = true
@@ -127,7 +127,7 @@ start = function(c)
       for _, message in ipairs(history) do
         if message.role == 'user' or message.role == 'assistant' then
           local text = protocol.text(message)
-          if text ~= '' then view.message(c.view, message.role == 'user' and 'You' or 'Pi',
+          if text ~= '' then view.message(c.view, message.role == 'user' and 'user' or 'assistant',
             protocol.clip(text, require('ai.config').options.limits.restored_bytes)) end
         end
       end
@@ -153,7 +153,7 @@ dispatch = function(c, token, expected_head, strict_head)
   local request = { session = session, token = token, message = message, item = item }
   c.active_request = request
   c.busy, c.accepted, c.settled = true, false, false
-  view.message(c.view, 'You', message)
+  view.message(c.view, 'user', message)
   if not sessions.send(session, { type = 'prompt', message = message }, function(response)
     if not owns_session() or c.active_request ~= request then return end
     if not response.success or response.data and response.data.disposition == 'handled' then

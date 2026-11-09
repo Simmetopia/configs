@@ -38,7 +38,7 @@ local function project(root, selected_profile)
   local p = { root = root, profile = profile, token = profiles.token(), sessions = {}, session_tokens = {}, queue = {},
     handled = handled, seen = vim.deepcopy(handled), paused = false }
   p.view = view.new(root, 'Pi project (' .. profile.name .. ')',
-    'i: prompt  Ctrl-L: clear  q: hide  :AINew / :AIStatus / :AIAbort / :AIStop / :AIRestart',
+    'i prompt · za fold · ^L clear · q hide',
     function()
       local status = p.new_pending and 'starting new conversation' or p.active and ('busy (' .. p.active.mode .. '/' .. p.active.role .. ')')
         or (p.paused and 'stopped (restart required)' or 'idle')
@@ -55,7 +55,7 @@ local function current()
   return selected and project(selected)
 end
 
-local function append(p, text) view.append(p.view, text) end
+local function append(p, text) view.event(p.view, 'info', text) end
 local function render(p) view.render(p.view) end
 
 finish = function(p, session, success)
@@ -91,7 +91,7 @@ local function record(p, session, event, token, key)
     protocol.update(session, event.assistantMessageEvent or {})
   elseif event.type == 'message_end' and event.message and event.message.role == 'assistant' then
     local text = protocol.text(event.message)
-    if text ~= '' then view.message(p.view, 'Pi', protocol.clip(text, require('ai.config').options.limits.response_bytes)) end
+    if text ~= '' then view.message(p.view, 'assistant', protocol.clip(text, require('ai.config').options.limits.response_bytes)) end
     session.stream, session.blocks = '', {}
     local reason = event.message.stopReason
     if item and reason then
@@ -99,10 +99,10 @@ local function record(p, session, event, token, key)
       if item.assistant_error then append(p, 'Assistant stopped: ' .. reason) end
     end
   elseif event.type == 'tool_execution_start' then
-    append(p, tools.start(session, event))
+    view.add(p.view, tools.start(session, event))
   elseif event.type == 'tool_execution_end' then
     local name = event.toolName or '?'
-    append(p, tools.finish(session, event))
+    view.add(p.view, tools.finish(session, event))
     if item then
       item.tool_errors = item.tool_errors or {}
       item.tool_errors[name] = event.isError and true or nil
@@ -174,7 +174,7 @@ start = function(p, mode, role)
       for _, message in ipairs(history) do
         if message.role == 'assistant' then
           local text = protocol.text(message)
-          if text ~= '' then view.message(p.view, 'Previous Pi', protocol.clip(text, require('ai.config').options.limits.restored_bytes)) end
+          if text ~= '' then view.message(p.view, 'assistant', protocol.clip(text, require('ai.config').options.limits.restored_bytes), { restored = true }) end
         end
       end
       render(p)
@@ -391,7 +391,9 @@ function M.log(root, text, role, profile_name)
   local selected_profile = profile_name and require('ai.config').profile(profile_name) or profiles.current()
   if selected_profile.name ~= profiles.current().name then return end
   local p = project(root, selected_profile)
-  if role then view.message(p.view, role, text) else append(p, text) end
+  if type(text) == 'table' then view.add(p.view, text)
+  elseif role then view.message(p.view, role == 'You' and 'user' or 'assistant', text)
+  else append(p, text) end
   render(p)
 end
 

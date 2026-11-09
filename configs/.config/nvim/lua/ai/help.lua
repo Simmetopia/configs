@@ -229,10 +229,10 @@ local function record(w, session, event, token)
     local reason = event.message.stopReason
     if reason and reason ~= 'stop' and reason ~= 'toolUse' then job.error = 'assistant stopped: ' .. reason end
   elseif event.type == 'tool_execution_start' then
-    log(job, tools.start(session, event))
+    if owns(job) then pcall(require('ai.comments').log, job.root, tools.start(session, event), nil, job.profile_name) end
     if event.toolName == 'replace_selection' then w.calls[event.toolCallId or ''] = event.args end
   elseif event.type == 'tool_execution_end' then
-    log(job, tools.finish(session, event))
+    if owns(job) then pcall(require('ai.comments').log, job.root, tools.finish(session, event), nil, job.profile_name) end
     if event.toolName == 'replace_selection' then
       local args = w.calls[event.toolCallId or '']
       if not event.isError and type(args) == 'table' and args.job == job.id and type(args.text) == 'string' then

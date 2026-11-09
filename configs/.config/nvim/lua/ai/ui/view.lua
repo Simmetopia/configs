@@ -1,5 +1,7 @@
 -- A view owns buffers/windows only. Workflows provide status, stream and submit callbacks.
 local markdown = require('ai.ui.markdown')
+local timeline = require('ai.ui.timeline')
+local ns = vim.api.nvim_create_namespace('ai_conversation_markdown')
 local M = {}
 local views = setmetatable({}, { __mode = 'k' })
 
@@ -14,9 +16,9 @@ local function geometry()
   return width, height, math.max(0, math.floor((vim.o.lines - height) / 2) - 1), math.max(0, math.floor((vim.o.columns - width) / 2))
 end
 
-function M.new(root, title, help, status, stream, submit, owner)
+function M.new(root, title, help, status, stream, submit, owner, stream_model)
   local view = { root = root, title = title, help = help, status = status, stream = stream, submit = submit,
-    owner = owner or 'default', log = {} }
+    owner = owner or 'default', stream_model = stream_model, entries_list = {}, index = {}, open = {}, groups = {} }
   views[view] = true
   return view
 end
@@ -25,33 +27,82 @@ function M.set_submit(view, submit)
   view.submit = submit
 end
 
-function M.append(view, text)
-  for line in (text .. '\n'):gmatch('(.-)\n') do view.log[#view.log + 1] = line end
-  while #view.log > require('ai.config').options.limits.history_lines do table.remove(view.log, 1) end
+function M.entries(view)
+  return view.entries_list
 end
 
-function M.message(view, role, text)
-  M.append(view, markdown.message(role, text))
+function M.add(view, entry)
+  if not view.index[entry.uid] then
+    view.index[entry.uid] = true
+    view.entries_list[#view.entries_list + 1] = entry
+    local list, total = view.entries_list, 0
+    for _, e in ipairs(list) do total = total + timeline.height(e) end
+    local limit = require('ai.config').options.limits.history_lines
+    while total > limit and #list > 1 do
+      local first = table.remove(list, 1)
+      view.index[first.uid] = nil
+      total = total - timeline.height(first)
+    end
+  end
+end
+
+function M.message(view, role, text, opts)
+  M.add(view, timeline.message(vim.tbl_extend('force', opts or {}, { role = role, text = text })))
+end
+
+function M.event(view, level, text)
+  M.add(view, timeline.event(level, text))
+end
+
+local function decorate_border(view)
+  local root = vim.fn.fnamemodify(view.root, ':~')
+  local title = (' %s · %s '):format(view.title, root)
+  local footer = (' %s │ %s '):format(view.status(), view.help)
+  if require('ai.config').options.ui.border == 'none' then
+    vim.wo[view.win].winbar = (title .. '│' .. footer):gsub('%%', '%%%%')
+  else
+    vim.api.nvim_win_set_config(view.win, { title = title, footer = footer, footer_pos = 'left' })
+  end
 end
 
 function M.render(view)
   if not view.buf or not vim.api.nvim_buf_is_valid(view.buf) then return end
-  local lines = { view.title .. '  ' .. view.root, view.status(), view.help, '' }
-  vim.list_extend(lines, view.log)
+  local width = valid(view.win) and vim.api.nvim_win_get_width(view.win) or 80
   local stream = view.stream()
-  if stream ~= '' then vim.list_extend(lines, vim.split(markdown.message('Pi (responding)', stream), '\n', { plain = true })) end
+  local result = timeline.render(view.entries_list, { width = width, open = view.open, stream = stream ~= '' and stream or nil,
+    stream_model = view.stream_model and view.stream_model() or nil })
+  local lines = #result.lines > 0 and result.lines or { '' }
   -- Follow new output only while the reader is already at the bottom.
   local follow = valid(view.win) and vim.api.nvim_win_get_cursor(view.win)[1] >= vim.api.nvim_buf_line_count(view.buf)
   vim.bo[view.buf].modifiable = true
   vim.api.nvim_buf_set_lines(view.buf, 0, -1, false, lines)
   vim.bo[view.buf].modifiable = false
-  markdown.decorate(view.buf, lines)
-  if follow then vim.api.nvim_win_set_cursor(view.win, { #lines, 0 }) end
+  vim.api.nvim_buf_clear_namespace(view.buf, ns, 0, -1)
+  for _, m in ipairs(result.marks) do pcall(vim.api.nvim_buf_set_extmark, view.buf, ns, m[1], m[2], m[3]) end
+  view.groups = result.groups
+  if valid(view.win) then
+    decorate_border(view)
+    if follow then vim.api.nvim_win_set_cursor(view.win, { #lines, 0 }) end
+  end
 end
 
 -- Display-only: leave the workflow, live stream and persisted session untouched.
 function M.clear(view)
-  view.log = {}
+  view.entries_list, view.index, view.open = {}, {}, {}
+  M.render(view)
+end
+
+local function fold(view, action)
+  if action == 'toggle' then
+    local row = vim.api.nvim_win_get_cursor(view.win)[1] - 1
+    for _, g in ipairs(view.groups) do
+      if g.row == row then view.open[g.key] = not view.open[g.key] or nil end
+    end
+  elseif action == 'open' then
+    for _, g in ipairs(view.groups) do view.open[g.key] = true end
+  else
+    view.open = {}
+  end
   M.render(view)
 end
 
@@ -127,13 +178,18 @@ function M.toggle(view)
     pcall(vim.api.nvim_buf_set_name, view.buf, ('ai://%s/project/%s'):format(view.owner, vim.fn.sha256(view.root)))
     vim.bo[view.buf].bufhidden = 'hide'
     vim.keymap.set('n', '<C-l>', function() M.clear(view) end, { buffer = view.buf, desc = 'Clear displayed AI history' })
+    for _, lhs in ipairs({ 'za', '<Tab>' }) do
+      vim.keymap.set('n', lhs, function() fold(view, 'toggle') end, { buffer = view.buf, desc = 'Toggle event group' })
+    end
+    vim.keymap.set('n', 'zR', function() fold(view, 'open') end, { buffer = view.buf, desc = 'Open all event groups' })
+    vim.keymap.set('n', 'zM', function() fold(view, 'close') end, { buffer = view.buf, desc = 'Close all event groups' })
     vim.keymap.set('n', 'q', function() M.hide(view) end, { buffer = view.buf })
     vim.keymap.set('n', 'i', function() M.input(view) end, { buffer = view.buf })
   end
   local width, height, row, col = geometry()
   view.win = vim.api.nvim_open_win(view.buf, true, {
     relative = 'editor', row = row, col = col, width = width, height = height,
-    style = 'minimal', border = require('ai.config').options.ui.border, title = ' ' .. view.title .. ' ',
+    style = 'minimal', border = require('ai.config').options.ui.border,
   })
   markdown.setup(view.buf, view.win)
   M.render(view)
