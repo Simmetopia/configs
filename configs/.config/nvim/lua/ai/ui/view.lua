@@ -50,9 +50,14 @@ function M.add(view, entry)
   end
 end
 
-function M.hold_history(view, entries)
-  if view.history_seen then return end
-  view.history_seen, view.held = true, entries
+-- Restored history is held per session key; entries from several keys accumulate until H shows them.
+function M.hold_history(view, entries, key)
+  key = key or 'default'
+  view.history_seen = view.history_seen or {}
+  if view.history_seen[key] then return end
+  view.history_seen[key] = true
+  view.held = view.held or {}
+  for _, e in ipairs(entries) do view.held[#view.held + 1] = e end
   if #entries > 0 then
     M.event(view, 'info', ('Resumed session — %d earlier messages hidden (H to show)'):format(#entries))
   end

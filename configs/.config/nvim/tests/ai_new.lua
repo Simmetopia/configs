@@ -10,7 +10,16 @@ vim.fn.writefile({ 'value = 1' }, root .. '/topic.py')
 vim.cmd.edit(root .. '/topic.py')
 local sessions = require('ai.session')
 local function wait_for(fn) assert(vim.wait(6000, fn, 10), 'new conversation test timed out') end
-local function text(buf) return table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), '\n') end
+local function text(buf)
+  local parts = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  for _, w in ipairs(vim.fn.win_findbuf(buf)) do
+    local footer = vim.api.nvim_win_get_config(w).footer
+    if type(footer) == 'table' then
+      for _, chunk in ipairs(footer) do parts[#parts + 1] = type(chunk) == 'table' and chunk[1] or chunk end
+    elseif type(footer) == 'string' then parts[#parts + 1] = footer end
+  end
+  return table.concat(parts, '\n')
+end
 local function records()
   if vim.fn.filereadable(vim.env.AI_TEST_LOG) == 0 then return {} end
   return vim.tbl_map(vim.json.decode, vim.fn.readfile(vim.env.AI_TEST_LOG))
@@ -64,7 +73,7 @@ for _, workflow in ipairs({
   vim.cmd(workflow.stop)
   vim.wait(200)
   vim.cmd(workflow.restart)
-  wait_for(function() return text(buf):find('Unrelated topic', 1, true) or text(buf):find('Previous Pi', 1, true) end)
+  wait_for(function() return text(buf):find('Unrelated topic', 1, true) or text(buf):find('earlier messages hidden', 1, true) end)
   input(buf, 'Follow-up after reconnect')
   wait_for(function() return #records() == count + 3 end)
   assert(records()[count + 3].session_id == fresh)

@@ -5,6 +5,7 @@ local roots = require('ai.project')
 local sessions = require('ai.session')
 local protocol = require('ai.protocol')
 local tools = require('ai.ui.tools')
+local timeline = require('ai.ui.timeline')
 local profiles = require('ai.profiles')
 local M = {}
 local ns = vim.api.nvim_create_namespace('ai_help')
@@ -24,8 +25,8 @@ local function same_token(left, right)
   return type(left) == 'table' and type(right) == 'table'
     and left.name == right.name and left.generation == right.generation
 end
-local function log(job, text, role)
-  if owns(job) then pcall(require('ai.comments').log, job.root, text, role, job.profile_name) end
+local function log(job, entry)
+  if owns(job) then pcall(require('ai.comments').log, job.root, entry, job.profile_name) end
 end
 
 function M.highlights()
@@ -134,7 +135,7 @@ end
 local function conflict(job, why)
   job.state, job.why = 'conflict', why
   set_mark(job, 'AIHelpConflict', 'AI conflict: :AIHelpReview')
-  log(job, 'Conflict: ' .. job.label .. ' (' .. why .. '); proposal kept for :AIHelpReview')
+  log(job, timeline.event('warn', 'Conflict: ' .. job.label .. ' (' .. why .. '); proposal kept for :AIHelpReview'))
   notify('conflict in ' .. job.label .. ' (' .. why .. ') — :AIHelpReview', vim.log.levels.WARN)
 end
 
@@ -149,7 +150,7 @@ local function deliver(job, token)
   if job.token ~= token or not profiles.allows(token) or job.state ~= 'ready' then return end
   if not vim.api.nvim_buf_is_loaded(job.buf) then
     job.state = 'failed'
-    log(job, 'Buffer closed before ' .. job.label .. ' finished. Proposal:\n\n```\n' .. job.proposal .. '\n```')
+    log(job, timeline.event('error', 'Buffer closed before ' .. job.label .. ' finished. Proposal:\n\n```\n' .. job.proposal .. '\n```'))
     return notify('buffer closed before ' .. job.label .. ' finished — ' .. project_hint() .. ' has the proposal', vim.log.levels.WARN)
   end
   if busy(job) then
@@ -181,13 +182,13 @@ local function deliver(job, token)
   if result == current then
     job.state = 'applied'
     drop_mark(job)
-    log(job, 'No change needed: ' .. job.label)
+    log(job, timeline.event('info', 'No change needed: ' .. job.label))
     return notify('no change needed in ' .. job.label)
   end
   local ok, err = write(job, sr, sc, er, ec, result)
   if not ok then return conflict(job, 'could not write: ' .. tostring(err)) end
   job.state = 'applied'
-  log(job, 'Applied (' .. how .. '): ' .. job.label)
+  log(job, timeline.event('info', 'Applied (' .. how .. '): ' .. job.label))
   notify(how .. ': ' .. job.label .. ' — u in that buffer to undo')
 end
 
@@ -200,17 +201,18 @@ finish = function(w, success, reason)
   elseif job.proposal then
     job.proposal = normalize(job.text, job.proposal)
     job.state = 'ready'
-    if job.answer then log(job, job.answer, 'Pi') end
+    if job.answer then log(job, timeline.message({ role = 'assistant', text = job.answer, model = job.session and job.session.model.id })) end
     deliver(job, job.token)
   elseif success and not job.error and job.answer then
     job.state = 'answered'
     drop_mark(job)
-    log(job, protocol.clip(job.answer, options().limits.response_bytes), 'Pi')
+    log(job, timeline.message({ role = 'assistant', text = protocol.clip(job.answer, options().limits.response_bytes),
+      model = job.session and job.session.model.id }))
     notify('answer for ' .. job.label .. ' — ' .. project_hint() .. ' to read')
   else
     job.state = 'failed'
     drop_mark(job)
-    log(job, 'Failed: ' .. job.label .. ' (' .. (reason or job.error or 'no replacement or answer') .. ')')
+    log(job, timeline.event('error', 'Failed: ' .. job.label .. ' (' .. (reason or job.error or 'no replacement or answer') .. ')'))
     notify('failed ' .. job.label .. ' — ' .. project_hint() .. ' for details', vim.log.levels.WARN)
   end
   local token, next_job = job.token, w.queue[1]
@@ -229,10 +231,10 @@ local function record(w, session, event, token)
     local reason = event.message.stopReason
     if reason and reason ~= 'stop' and reason ~= 'toolUse' then job.error = 'assistant stopped: ' .. reason end
   elseif event.type == 'tool_execution_start' then
-    if owns(job) then pcall(require('ai.comments').log, job.root, tools.start(session, event), nil, job.profile_name) end
+    log(job, tools.start(session, event))
     if event.toolName == 'replace_selection' then w.calls[event.toolCallId or ''] = event.args end
   elseif event.type == 'tool_execution_end' then
-    if owns(job) then pcall(require('ai.comments').log, job.root, tools.finish(session, event), nil, job.profile_name) end
+    log(job, tools.finish(session, event))
     if event.toolName == 'replace_selection' then
       local args = w.calls[event.toolCallId or '']
       if not event.isError and type(args) == 'table' and args.job == job.id and type(args.text) == 'string' then
@@ -258,7 +260,7 @@ local function fail_queue(w, why)
     if job.state == 'queued' then
       job.state = 'failed'
       drop_mark(job)
-      log(job, 'Failed: ' .. job.label .. ' (' .. why .. ')')
+      log(job, timeline.event('error', 'Failed: ' .. job.label .. ' (' .. why .. ')'))
     end
   end
   if #w.queue > 0 then notify('could not start Pi for selection jobs — ' .. project_hint() .. ' for details', vim.log.levels.ERROR) end
@@ -279,7 +281,7 @@ local function start(w)
     on_event = function(s, event) record(w, s, event, token) end,
     on_diagnostic = function(text)
       if session and owns_session(session) then
-        pcall(require('ai.comments').log, w.root, text, nil, w.profile_name)
+        pcall(require('ai.comments').log, w.root, timeline.event('warn', text), w.profile_name)
       end
     end,
     on_error = function(s, text)
@@ -389,7 +391,7 @@ function M.command(opts)
   jobs[#jobs + 1] = job
   local w = worker(root, role)
   w.queue[#w.queue + 1] = job
-  log(job, 'Selection job ' .. job.label .. ' [' .. role .. ']: ' .. instruction:sub(1, 200))
+  log(job, timeline.message({ role = 'user', label = 'Selection [' .. role .. ']', text = instruction:sub(1, 200) }))
   dispatch(w)
 end
 
@@ -439,7 +441,7 @@ local function review(job)
     local ok, err = write(job, r1, c1, r2, c2, text)
     if not ok then return vim.notify('AI: could not apply: ' .. tostring(err), vim.log.levels.ERROR) end
     job.state = 'applied'
-    log(job, 'Applied from review: ' .. job.label)
+    log(job, timeline.event('info', 'Applied from review: ' .. job.label))
     close_review(tab, job)
   end
   vim.keymap.set('n', 'ga', apply, { buffer = proposal, desc = 'Apply AI proposal' })

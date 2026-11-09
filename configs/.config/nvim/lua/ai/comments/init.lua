@@ -8,6 +8,7 @@ local sessions = require('ai.session')
 local protocol = require('ai.protocol')
 local view = require('ai.ui.view')
 local tools = require('ai.ui.tools')
+local timeline = require('ai.ui.timeline')
 local profiles = require('ai.profiles')
 local M = {}
 local projects = {}
@@ -45,7 +46,8 @@ local function project(root, selected_profile)
       return 'Status: ' .. status .. ' | queued: ' .. #p.queue
     end,
     function() return p.active and p.active.session.stream or '' end,
-    function(text) return enqueue_prompt(p, text) end, profile.name .. ':project')
+    function(text) return enqueue_prompt(p, text) end, profile.name .. ':project',
+    function() return p.active and p.active.session.model.id end)
   projects[key] = p
   return p
 end
@@ -55,7 +57,7 @@ local function current()
   return selected and project(selected)
 end
 
-local function append(p, text) view.event(p.view, 'info', text) end
+local function append(p, text, level) view.event(p.view, level or 'info', text) end
 local function render(p) view.render(p.view) end
 
 finish = function(p, session, success)
@@ -68,7 +70,7 @@ finish = function(p, session, success)
     storage.remember(p, item.key)
     files.cleanup(p, item)
   else
-    append(p, 'Failed/aborted: ' .. item.label .. ' (marker retained)')
+    append(p, 'Failed/aborted: ' .. item.label .. ' (marker retained)', 'error')
     p.seen[item.key] = nil
   end
   files.checktime(p)
@@ -91,12 +93,14 @@ local function record(p, session, event, token, key)
     protocol.update(session, event.assistantMessageEvent or {})
   elseif event.type == 'message_end' and event.message and event.message.role == 'assistant' then
     local text = protocol.text(event.message)
-    if text ~= '' then view.message(p.view, 'assistant', protocol.clip(text, require('ai.config').options.limits.response_bytes)) end
+    if text ~= '' then
+      view.message(p.view, 'assistant', protocol.clip(text, require('ai.config').options.limits.response_bytes), { model = session.model.id })
+    end
     session.stream, session.blocks = '', {}
     local reason = event.message.stopReason
     if item and reason then
       item.assistant_error = reason ~= 'stop' and reason ~= 'toolUse'
-      if item.assistant_error then append(p, 'Assistant stopped: ' .. reason) end
+      if item.assistant_error then append(p, 'Assistant stopped: ' .. reason, 'warn') end
     end
   elseif event.type == 'tool_execution_start' then
     view.add(p.view, tools.start(session, event))
@@ -119,13 +123,13 @@ local function record(p, session, event, token, key)
   elseif event.type == 'extension_ui_request' then
     if vim.tbl_contains({ 'select', 'confirm', 'input', 'editor' }, event.method) then
       sessions.send(session, { type = 'extension_ui_response', id = event.id, cancelled = true })
-      append(p, 'Pi extension dialog cancelled (unsupported in this UI).')
+      append(p, 'Pi extension dialog cancelled (unsupported in this UI).', 'warn')
     end
   elseif event.type == 'response' and event.success == false then
-    append(p, 'Unmatched Pi command/parse error')
+    append(p, 'Unmatched Pi command/parse error', 'error')
     if item then item.failed = true end
   elseif event.type == 'extension_error' then
-    append(p, 'Pi extension error (details withheld)')
+    append(p, 'Pi extension error (details withheld)', 'error')
     if item then item.failed = true end
   end
   render(p)
@@ -145,11 +149,11 @@ start = function(p, mode, role)
   local err
   session, err = sessions.start(p.root, mode, role, {
     on_event = function(s, event) record(p, s, event, token, key) end,
-    on_diagnostic = function(text) if session and owns_session(session) then append(p, text); render(p) end end,
+    on_diagnostic = function(text) if session and owns_session(session) then append(p, text, 'warn'); render(p) end end,
     on_error = function(s, text)
       if not owns_session(s) then return end
       p.paused = true
-      append(p, text)
+      append(p, text, 'error')
       finish(p, s, false)
       render(p)
     end,
@@ -158,7 +162,7 @@ start = function(p, mode, role)
       if current_slot then p.sessions[key], p.session_tokens[key] = nil, nil end
       if current_slot and profiles.allows(token) and not stopping then
         p.paused = true
-        append(p, 'Pi ' .. key .. ' exited (code ' .. code .. '); :AIRestart to reconnect.')
+        append(p, 'Pi ' .. key .. ' exited (code ' .. code .. '); :AIRestart to reconnect.', 'error')
         finish(p, s, false)
         notify('Pi RPC exited; use :AIRestart.', vim.log.levels.ERROR)
       end
@@ -171,17 +175,26 @@ start = function(p, mode, role)
     on_ready = function(_, history)
       if not owns_session(session) then return end
       append(p, 'Connected: ' .. key .. ' (persisted project session)')
+      local restored = {}
       for _, message in ipairs(history) do
         if message.role == 'assistant' then
           local text = protocol.text(message)
-          if text ~= '' then view.message(p.view, 'assistant', protocol.clip(text, require('ai.config').options.limits.restored_bytes), { restored = true }) end
+          if text ~= '' then
+            restored[#restored + 1] = timeline.message({ role = 'assistant', restored = true, model = session.model.id,
+              text = protocol.clip(text, require('ai.config').options.limits.restored_bytes) })
+          end
         end
+      end
+      if require('ai.config').options.ui.restore_history then
+        for _, e in ipairs(restored) do view.add(p.view, e) end
+      else
+        view.hold_history(p.view, restored, key)
       end
       render(p)
       dispatch(p, token)
     end,
   })
-  if not session then if profiles.allows(token) then p.paused = true; append(p, err); render(p) end; return end
+  if not session then if profiles.allows(token) then p.paused = true; append(p, err, 'error'); render(p) end; return end
   p.sessions[key], p.session_tokens[key] = session, token
   return session
 end
@@ -198,11 +211,11 @@ dispatch = function(p, token, expected_head, strict_head)
   if not session or not p.session_tokens[key] or not profiles.allows(p.session_tokens[key]) or not session.ready then render(p); return end
   markers.pop(p.queue)
   item.session, p.active = session, item
-  append(p, item.label .. ' [sent]')
+  view.message(p.view, 'user', item.text, { label = item.user_label })
   if not sessions.send(session, { type = 'prompt', message = item.prompt }, function(response)
     if not profiles.allows(item.token) or p.sessions[key] ~= session or p.active ~= item then return end
     if not response.success or response.data and response.data.disposition == 'handled' then
-      append(p, 'Prompt rejected/handled without a run')
+      append(p, 'Prompt rejected/handled without a run', 'error')
       finish(p, session, false)
       return
     end
@@ -219,7 +232,7 @@ enqueue_prompt = function(p, text)
   serial = serial + 1
   local role = require('ai.config').options.comments.prompt_role
   local item = { key = 'manual-' .. serial, mode = 'edit', role = role, token = profiles.token(),
-    label = 'Prompt (' .. role .. '): ' .. text:sub(1, 100),
+    label = 'Prompt (' .. role .. '): ' .. text:sub(1, 100), text = text, user_label = 'Prompt',
     prompt = require('ai.prompts').manual(text, p.prompt_path) }
   markers.enqueue(p.queue, p.seen, item)
   append(p, item.label .. ' [queued]')
@@ -251,6 +264,7 @@ function M.saved(buf)
     local item = {
       key = key, marker = marker, path = path, buf = buf, mode = mode, role = role, token = token,
       prompt = require('ai.prompts').comment(root, path, marker, lines, mode),
+      text = marker.instruction, user_label = 'AI' .. marker.kind .. ' ' .. path:sub(#root + 2) .. ':' .. marker.number,
       label = path:sub(#root + 2) .. ':' .. marker.number .. ' AI' .. marker.kind .. ' [' .. role .. '] ' .. marker.instruction:sub(1, 100),
     }
     if not p.handled[key] and markers.enqueue(p.queue, p.seen, item) then
@@ -341,11 +355,11 @@ function M.abort()
     sessions.send(s, { type = 'abort' }, function(response)
       if not profiles.allows(token) or not same_token(p.token, token) or p.active ~= item
         or p.sessions[key] ~= s or item.session ~= s then return end
-      if not response.success then append(p, 'Abort failed; use :AIStop') end
+      if not response.success then append(p, 'Abort failed; use :AIStop', 'error') end
       render(p)
     end)
   end
-  append(p, 'Local queue cleared; abort requested')
+  append(p, 'Local queue cleared; abort requested', 'warn')
   render(p)
 end
 
@@ -387,13 +401,11 @@ function M.retire()
   end
 end
 
-function M.log(root, text, role, profile_name)
+function M.log(root, entry, profile_name)
   local selected_profile = profile_name and require('ai.config').profile(profile_name) or profiles.current()
   if selected_profile.name ~= profiles.current().name then return end
   local p = project(root, selected_profile)
-  if type(text) == 'table' then view.add(p.view, text)
-  elseif role then view.message(p.view, role == 'You' and 'user' or 'assistant', text)
-  else append(p, text) end
+  view.add(p.view, entry)
   render(p)
 end
 

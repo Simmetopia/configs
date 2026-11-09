@@ -189,6 +189,18 @@ local function test_starting()
   prove_released()
 end
 
+-- Buffer text plus the border footer of windows showing it (status lives in the footer).
+local function view_text(buf)
+  local parts = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  for _, w in ipairs(vim.fn.win_findbuf(buf)) do
+    local footer = vim.api.nvim_win_get_config(w).footer
+    if type(footer) == 'table' then
+      for _, chunk in ipairs(footer) do parts[#parts + 1] = type(chunk) == 'table' and chunk[1] or chunk end
+    elseif type(footer) == 'string' then parts[#parts + 1] = footer end
+  end
+  return table.concat(parts, '\n')
+end
+
 local function test_active_queued()
   local before = log_count()
   local root, buf = project('chat-queued')
@@ -197,8 +209,7 @@ local function test_active_queued()
   run_chat_input('first queued chat')
   wait_for(function() return vim.fn.filereadable(gates .. '/acceptance.arrived') == 1 end, 'chat acceptance hold')
   run_chat_input('second queued chat')
-  local chat_lines = vim.api.nvim_buf_get_lines(vim.api.nvim_get_current_buf(), 0, -1, false)
-  assert(table.concat(chat_lines, '\n'):find('queued: 1', 1, true), 'chat did not retain the second prompt in its queue')
+  assert(view_text(vim.api.nvim_get_current_buf()):find('queued: 1', 1, true), 'chat did not retain the second prompt in its queue')
   hide_to_main()
   refuse_hidden('chat active/queued work', 'web chat has active or queued work')
   assert(chat.busy_reason() ~= nil, 'hidden chat work was lost after refusal')
@@ -213,7 +224,7 @@ local function test_active_queued()
   wait_for(function() return vim.fn.filereadable(gates .. '/acceptance.arrived') == 1 end, 'comment acceptance hold')
   comments.toggle()
   local comment_view = vim.api.nvim_get_current_buf()
-  assert(table.concat(vim.api.nvim_buf_get_lines(comment_view, 0, -1, false), '\n'):find('queued: 1', 1, true),
+  assert(view_text(comment_view):find('queued: 1', 1, true),
     'comments did not retain the second marker in its queue')
   comments.toggle()
   hide_to_main()
@@ -345,9 +356,9 @@ local function test_pending_and_settled_gates()
         item.name .. ' ' .. stage .. ' hold')
       if item.name == 'comments' and stage == 'retry' then
         comments.toggle()
-        local view_buffer = vim.api.nvim_get_current_buf()
-        local text = table.concat(vim.api.nvim_buf_get_lines(view_buffer, 0, -1, false), '\n')
-        assert(text:find('Pi: auto_retry_start', 1, true), 'comment workflow did not process auto_retry_start')
+        vim.cmd('normal zR') -- info events are folded by default
+        local saw = view_text(vim.api.nvim_get_current_buf()):find('Pi: auto_retry_start', 1, true)
+        assert(saw, 'comment workflow did not process auto_retry_start')
       elseif item.name == 'help' and stage == 'retry' then
         local saw_retry, saw_compaction = false, false
         for _, event in ipairs(observed_lifecycle_events) do

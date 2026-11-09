@@ -256,7 +256,7 @@ wait_for(function() return vim.deep_equal(vim.fn.readfile(path), { 'value = 1' }
 -- A profile cached before this marker is handled must consult the shared root ledger on resave.
 local retained_buf, retained_path = file('ai_comments_test_' .. vim.uv.hrtime() .. '.py', 'value = 1')
 local project_root = assert(require('ai.project').for_buffer(retained_buf))
-require('ai.comments').log(project_root, 'cache studio before marker handling', nil, 'studio')
+require('ai.comments').log(project_root, require('ai.ui.timeline').event('info', 'cache studio before marker handling'), 'studio')
 local function switch_to(name)
   local completed, success = false, false
   assert(require('ai.profiles').switch(name, function(ok) completed, success = true, ok end))
@@ -285,6 +285,9 @@ vim.api.nvim_set_current_buf(retained_buf)
 vim.cmd.write()
 assert(#log() == calls_before_retained + 1, 'resaving in the original profile replayed a retained marker')
 
+local function has_event(v, text)
+  for _, e in ipairs(require('ai.ui.view').entries(v)) do if e.kind == 'event' and e.text == text then return true end end
+end
 -- A delayed abort response from profile A cannot mutate its cached view after A→B→A.
 local held_abort
 local real_send = require('ai.session').send
@@ -337,7 +340,7 @@ end
 -- the active-item identity check can reject this stale abort response.
 abort_project.sessions[retired_abort_item.mode .. ':' .. retired_abort_item.role] = retired_abort_session
 held_abort()
-assert(abort_project.active == replacement_abort_item and abort_project.view.log[#abort_project.view.log] ~= 'Abort failed; use :AIStop',
+assert(abort_project.active == replacement_abort_item and not has_event(abort_project.view, 'Abort failed; use :AIStop'),
   'retired abort response mutated the active replacement item despite an old session slot')
 -- Restore the old active item while keeping the replacement session slot: only
 -- the exact session-slot check can reject this stale response.
@@ -348,7 +351,7 @@ abort_project.active = replacement_abort_item
 abort_project.sessions[retired_abort_item.mode .. ':' .. retired_abort_item.role] = replacement_abort_session
 abort_project.token = replacement_abort_token
 profiles.allows = real_allows
-assert(not vim.tbl_contains(abort_project.view.log, 'Abort failed; use :AIStop'),
+assert(not has_event(abort_project.view, 'Abort failed; use :AIStop'),
   'retired abort response contaminated the reactivated project view')
 vim.fn.delete(abort_acceptance_hold)
 wait_for(function() return vim.fn.filereadable(abort_gates .. '/acceptance.arrived') == 0 end)
