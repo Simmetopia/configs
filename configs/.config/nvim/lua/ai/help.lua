@@ -391,7 +391,7 @@ function M.command(opts)
   jobs[#jobs + 1] = job
   local w = worker(root, role)
   w.queue[#w.queue + 1] = job
-  log(job, timeline.message({ role = 'user', label = 'Selection [' .. role .. ']', text = instruction:sub(1, 200) }))
+  log(job, timeline.message({ role = 'user', label = 'Selection [' .. role .. '] ' .. job.label, text = instruction:sub(1, 200) }))
   dispatch(w)
 end
 

@@ -172,6 +172,34 @@ end
 assert(#view.entries(v) == 3 and view.entries(v)[1] == added[4], 'trim')
 limits.history_lines = 350
 view.clear(v)
+-- notice follows H
+view.reset(v)
+view.hold_history(v, { tl.message({ role = 'user', text = 'old1', restored = true }), tl.message({ role = 'user', text = 'old2', restored = true }) }, 'k1')
+view.hold_history(v, { tl.message({ role = 'user', text = 'old3', restored = true }) }, 'k2')
+view.render(v)
+local function has_line(text)
+  for _, l in ipairs(vim.api.nvim_buf_get_lines(v.buf, 0, -1, false)) do if l:find(text, 1, true) then return true end end
+end
+assert(has_line('1 earlier messages hidden'), 'notice shown (info events collapse into a group)')
+view.show_history(v)
+local notices = {}
+for _, e in ipairs(view.entries(v)) do if e.kind == 'event' then notices[#notices + 1] = e.text end end
+assert(#notices == 2 and notices[1] == 'Resumed session — 2 earlier messages shown'
+  and notices[2] == 'Resumed session — 1 earlier messages shown', 'notice text after H')
+assert(not has_line('hidden (H to show)'), 'stale notice')
+-- render falls back when the renderer errors
+do
+  local real = tl.render
+  tl.render = function() error('boom') end
+  view.clear(v)
+  view.event(v, 'info', 'still visible')
+  view.render(v)
+  assert(has_line('timeline render failed') and has_line('still visible'), 'render fallback')
+  tl.render = real
+  view.clear(v)
+  view.add(v, tl.event('info', nil))
+  view.render(v)
+end
 -- border none uses the winbar
 local ui = require('ai.config').options.ui
 ui.border = 'none'
@@ -194,6 +222,17 @@ for _, size in ipairs({ { 100, 40 }, { 20, 8 } }) do
     assert(cfg.row + cfg.height + 2 <= vim.o.lines)
   end
 end
+vim.o.columns, vim.o.lines = old_columns, old_lines
+-- resize re-renders: a long header truncates to the narrower window
+view.clear(v)
+view.add(v, tl.message({ role = 'user', label = ('x'):rep(80), text = 'hi' }))
+vim.o.columns, vim.o.lines = 100, 40
+view.resize()
+local wide = vim.api.nvim_buf_get_lines(v.buf, 0, 1, false)[1]
+vim.o.columns, vim.o.lines = 40, 20
+view.resize()
+local narrow = vim.api.nvim_buf_get_lines(v.buf, 0, 1, false)[1]
+assert(vim.fn.strdisplaywidth(narrow) < vim.fn.strdisplaywidth(wide) and narrow:find('…', 1, true), 'resize re-render')
 vim.o.columns, vim.o.lines = old_columns, old_lines
 view.resize()
 view.hide(v)

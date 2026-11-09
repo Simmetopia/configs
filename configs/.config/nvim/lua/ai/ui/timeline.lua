@@ -30,7 +30,7 @@ function M.tool(opts)
 end
 
 function M.event(level, text)
-  return entry('event', { level = level, text = text })
+  return entry('event', { level = level, text = tostring(text or '') })
 end
 
 -- Split a body into lines, closing an unbalanced code fence. Returns lines and the 1-based fenced rows.
@@ -78,14 +78,28 @@ local function truncate(line, budget)
   return vim.fn.strcharpart(line, 0, n) .. '…'
 end
 
+-- Exactly 3 display cells to sit over the '## ' prefix: band cut or padded to 2 cells, plus a space.
+local function band_text(band)
+  local text = tostring(band or '')
+  local n = vim.fn.strchars(text)
+  while n > 0 and vim.fn.strdisplaywidth(vim.fn.strcharpart(text, 0, n)) > 2 do n = n - 1 end
+  text = vim.fn.strcharpart(text, 0, n)
+  return text .. (' '):rep(2 - vim.fn.strdisplaywidth(text)) .. ' '
+end
+M.band_text = band_text
+
 local function info(e) return e.kind == 'event' and e.level == 'info' end
 
 local function event_lines(e, icons)
   local prefix = e.level == 'warn' and icons.warn .. ' ' or e.level == 'error' and icons.error .. ' ' or '· '
-  local lines = vim.split(e.text, '\n', { plain = true })
-  lines[1] = prefix .. lines[1]
-  for i = 2, #lines do lines[i] = '  ' .. lines[i] end
-  return lines
+  local first, rest = e.text:match('^([^\n]*)\n(.*)$')
+  if not first then return { prefix .. e.text }, {} end
+  -- Continuation lines render like message bodies: unprefixed, with balanced fences.
+  local lines, fenced = body(rest)
+  table.insert(lines, 1, prefix .. first)
+  local shifted = {}
+  for row in pairs(fenced) do shifted[row + 1] = true end
+  return lines, shifted
 end
 
 local event_hl = { info = 'AIEvent', warn = 'AIEventWarn', error = 'AIEventError' }
@@ -95,7 +109,8 @@ function M.height(e)
   if e.kind == 'message' then
     return #body(e.text) + 2
   elseif e.kind == 'event' then
-    return #vim.split(e.text, '\n', { plain = true })
+    local rest = e.text:match('^[^\n]*\n(.*)$')
+    return rest and #body(rest) + 1 or 1
   end
   return 1
 end
@@ -106,6 +121,14 @@ function M.render(entries, opts)
   local function add(text) lines[#lines + 1] = text; return #lines - 1 end
   local function mark(row, col, o) marks[#marks + 1] = { row, col, o } end
   local function span(row, text, group) if #text > 0 then mark(row, 0, { end_col = #text, hl_group = group, priority = 200 }) end end
+  local function event_block(e, group)
+    local ls, fenced = event_lines(e, icons)
+    for k, line in ipairs(ls) do
+      local r = add(line)
+      span(r, line, group)
+      if fenced[k] then mark(r, 0, { line_hl_group = 'AICode' }) end
+    end
+  end
 
   local function message(e, header_text, text, streaming)
     local group = e.restored and 'AIBandRestored' or e.role == 'user' and 'AIBandUser' or 'AIBandAssistant'
@@ -113,7 +136,7 @@ function M.render(entries, opts)
     local header = truncate(header_text, opts.width - 6 - vim.fn.strdisplaywidth(icon .. ' '))
     local row = add(header)
     mark(row, 0, { line_hl_group = group })
-    mark(row, 0, { virt_text = { { icons.band .. ' ', group } }, virt_text_pos = 'overlay' })
+    mark(row, 0, { virt_text = { { band_text(icons.band), group } }, virt_text_pos = 'overlay' })
     mark(row, 3, { virt_text = { { icon .. ' ', group } }, virt_text_pos = 'inline' })
     mark(row, 0, { end_col = #header, hl_group = group, priority = 200 })
     local body_lines, fenced = body(text)
@@ -144,7 +167,7 @@ function M.render(entries, opts)
         while j < n and info(entries[j + 1]) do j = j + 1 end
         local count = j - i + 1
         if count == 1 then
-          for _, line in ipairs(event_lines(e, icons)) do span(add(line), line, 'AIEvent') end
+          event_block(e, 'AIEvent')
         else
           local is_open = opts.open and opts.open[e.uid]
           local header = is_open and ('%s %d events'):format(icons.fold_open, count)
@@ -155,7 +178,7 @@ function M.render(entries, opts)
           groups[#groups + 1] = group
           if is_open then
             for k = i, j do
-              for _, line in ipairs(event_lines(entries[k], icons)) do span(add(line), line, 'AIEvent') end
+              event_block(entries[k], 'AIEvent')
             end
           end
           group.last = #lines - 1
@@ -172,7 +195,7 @@ function M.render(entries, opts)
           if type(e.elapsed) == 'number' then text = text .. (' %.1fs'):format(e.elapsed) end
           mark(row, 0, { virt_text = { { text, group } }, virt_text_pos = 'right_align' })
         else
-          for _, line in ipairs(event_lines(e, icons)) do span(add(line), line, event_hl[e.level]) end
+          event_block(e, event_hl[e.level])
         end
         i = i + 1
       end

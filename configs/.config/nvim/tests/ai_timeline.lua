@@ -58,7 +58,7 @@ out = t.render({ e1, e2, e3 }, { width = 80, open = { [e1.uid] = true } })
 assert(out.lines[1] == '▾ 3 events' and out.lines[2] == '· Connected' and out.lines[4] == '· Settled: x')
 local multi = t.event('info', 'a\nb')
 out = t.render({ multi }, { width = 80, open = {} })
-assert(#out.lines == 2 and out.lines[1] == '· a' and out.lines[2] == '  b' and t.height(multi) == 2)
+assert(#out.lines == 2 and out.lines[1] == '· a' and out.lines[2] == 'b' and t.height(multi) == 2)
 -- blank line between a tool/event run and a following message
 out = t.render({ e4, t.message({ role = 'user', text = 'hi' }) }, { width = 80, open = {} })
 assert(out.lines[2] == '' and out.lines[3]:match('^## You'))
@@ -89,8 +89,26 @@ out = t.render({ e1, e2, e3 }, { width = 80, open = {} })
 assert(out.groups[1].last == 0)
 -- height
 assert(t.height(user) == 3 and t.height(e1) == 1)
+-- event(nil) is coerced
+assert(t.event('info', nil).text == '' and #t.render({ t.event('info', nil) }, { width = 80, open = {} }).lines == 1)
+-- multi-line event with an unbalanced fence: unprefixed body, closed fence, AICode rows, consistent height
+local fev = t.event('error', 'Buffer closed. Proposal:\n\n```\n  indented')
+out = t.render({ fev }, { width = 80, open = {} })
+assert(#out.lines == 5 and t.height(fev) == 5, 'multi-line event rows')
+assert(out.lines[1]:find('Buffer closed', 1, true) and out.lines[3] == '```' and out.lines[4] == '  indented' and out.lines[5] == '```')
+assert(has_mark(out, 3, 'line_hl_group', 'AICode') and has_mark(out, 4, 'line_hl_group', 'AICode') and not has_mark(out, 1, 'line_hl_group', 'AICode'))
+-- band overlay is always 3 cells
+for _, band in ipairs({ 'X', '####', '', '▓▓', '世界' }) do
+  assert(vim.fn.strdisplaywidth(t.band_text(band)) == 3, 'band width for ' .. band)
+end
+require('ai.config').options.ui.icons.band = '####'
+out = t.render({ user }, { width = 80, open = {} })
+local overlay
+for _, m in ipairs(out.marks) do if m[3].virt_text_pos == 'overlay' then overlay = m[3].virt_text[1][1] end end
+assert(overlay == '## ', 'band override cut to 2 cells')
+require('ai.config').options.ui.icons.band = '▓▓'
 -- highlights_reapplied
-vim.cmd('highlight clear')
+vim.cmd('highlight clear AIBandUser')
 vim.api.nvim_exec_autocmds('ColorScheme', {})
-assert(next(vim.api.nvim_get_hl(0, { name = 'AIBandUser' })) ~= nil)
+assert(vim.api.nvim_get_hl(0, { name = 'AIBandUser' }).link == 'DiffAdd', 'highlights not reapplied')
 print('AI timeline tests passed')

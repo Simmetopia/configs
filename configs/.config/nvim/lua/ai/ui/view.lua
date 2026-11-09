@@ -59,7 +59,10 @@ function M.hold_history(view, entries, key)
   view.held = view.held or {}
   for _, e in ipairs(entries) do view.held[#view.held + 1] = e end
   if #entries > 0 then
-    M.event(view, 'info', ('Resumed session — %d earlier messages hidden (H to show)'):format(#entries))
+    local notice = timeline.event('info', ('Resumed session — %d earlier messages hidden (H to show)'):format(#entries))
+    view.notices = view.notices or {}
+    view.notices[#view.notices + 1] = { entry = notice, count = #entries }
+    M.add(view, notice)
   end
 end
 
@@ -75,6 +78,10 @@ function M.show_history(view)
     end
   end
   view.held = nil
+  for _, n in ipairs(view.notices or {}) do
+    n.entry.text = ('Resumed session — %d earlier messages shown'):format(n.count)
+  end
+  view.notices = nil
   trim(view)
   M.render(view)
 end
@@ -102,8 +109,16 @@ function M.render(view)
   if not view.buf or not vim.api.nvim_buf_is_valid(view.buf) then return end
   local width = valid(view.win) and vim.api.nvim_win_get_width(view.win) or 80
   local stream = view.stream()
-  local result = timeline.render(view.entries_list, { width = width, open = view.open, folded = view.folded, stream = stream ~= '' and stream or nil,
-    stream_model = view.stream_model and view.stream_model() or nil })
+  local ok, result = pcall(timeline.render, view.entries_list, { width = width, open = view.open, folded = view.folded,
+    stream = stream ~= '' and stream or nil, stream_model = view.stream_model and view.stream_model() or nil })
+  if not ok then
+    -- A renderer bug must not stall the workflow: show plain text instead.
+    local lines = { 'AI: timeline render failed: ' .. tostring(result) }
+    for _, e in ipairs(view.entries_list) do
+      if e.text then vim.list_extend(lines, vim.split(e.text, '\n', { plain = true })) end
+    end
+    result = { lines = lines, marks = {}, groups = {}, messages = {} }
+  end
   local lines = #result.lines > 0 and result.lines or { '' }
   -- Follow new output only while the reader is already at the bottom.
   local follow = valid(view.win) and vim.api.nvim_win_get_cursor(view.win)[1] >= vim.api.nvim_buf_line_count(view.buf)
@@ -157,7 +172,7 @@ local function fold(view, action)
 end
 
 function M.reset(view)
-  view.held, view.history_seen = nil, nil
+  view.held, view.history_seen, view.notices = nil, nil, nil
   M.clear(view)
   if view.input_buf and vim.api.nvim_buf_is_valid(view.input_buf) then
     vim.api.nvim_buf_set_lines(view.input_buf, 0, -1, false, { '' })
@@ -185,6 +200,7 @@ function M.resize()
       vim.api.nvim_win_set_config(view.win, { relative = 'editor', row = row, col = col, width = width, height = height })
     end
     if valid(view.input_win) then vim.api.nvim_win_set_config(view.input_win, input_geometry()) end
+    if valid(view.win) then M.render(view) end
   end
 end
 

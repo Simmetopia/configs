@@ -64,7 +64,7 @@ by this Neovim instance; no repository scan occurs.
 - `:AINew`: start a fresh project conversation for the `comments.prompt_role`
   edit session (shared with `AI!` markers by default, or `AI!!` when
   `prompt_role = 'expensive'`).
-  Luna edit/question and Opus question histories remain unchanged.
+  The other three project histories remain unchanged.
   New-conversation commands refuse while work is active, queued, or connecting;
   finish it or stop and wait for exit first. Old Pi transcripts are kept on disk,
   and the new session identity is saved so reconnects/Neovim restarts resume it.
@@ -72,7 +72,7 @@ by this Neovim instance; no repository scan occurs.
 - `:AIStatus`: project connection and queue status.
 - `:AIAbort`: discard local queued requests and abort the active request.
 - `:AIStop`: close all project RPC sessions and discard pending work.
-- `:AIRestart`: reconnect the project's Opus edit session after it exits or stops
+- `:AIRestart`: reconnect the project's `comments.prompt_role` edit session after it exits or stops
   (wait for the stopped process to exit first). Requests saved while stopped
   remain queued until restart; questions reconnect their own session as needed.
 
