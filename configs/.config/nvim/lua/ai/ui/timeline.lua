@@ -110,10 +110,11 @@ function M.render(entries, opts)
   local function message(e, header_text, text, streaming)
     local group = e.restored and 'AIBandRestored' or e.role == 'user' and 'AIBandUser' or 'AIBandAssistant'
     local icon = e.role == 'user' and icons.user or icons.assistant
-    local header = truncate(header_text, opts.width - 6)
+    local header = truncate(header_text, opts.width - 6 - vim.fn.strdisplaywidth(icon .. ' '))
     local row = add(header)
     mark(row, 0, { line_hl_group = group })
-    mark(row, 0, { virt_text = { { icons.band .. ' ' .. icon .. ' ', group } }, virt_text_pos = 'overlay' })
+    mark(row, 0, { virt_text = { { icons.band .. ' ', group } }, virt_text_pos = 'overlay' })
+    mark(row, 3, { virt_text = { { icon .. ' ', group } }, virt_text_pos = 'inline' })
     mark(row, 0, { end_col = #header, hl_group = group, priority = 200 })
     if e.time and not streaming then
       mark(row, 0, { virt_text = { { os.date('%H:%M', e.time), { group, 'AIBandMeta' } } }, virt_text_pos = 'right_align' })
@@ -138,8 +139,7 @@ function M.render(entries, opts)
         while j < n and info(entries[j + 1]) do j = j + 1 end
         local count = j - i + 1
         if count == 1 then
-          local row = add('· ' .. e.text)
-          span(row, lines[row + 1], 'AIEvent')
+          for _, line in ipairs(event_lines(e, icons)) do span(add(line), line, 'AIEvent') end
         else
           local is_open = opts.open and opts.open[e.uid]
           local header = is_open and ('%s %d events'):format(icons.fold_open, count)

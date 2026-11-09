@@ -18,6 +18,14 @@ assert(has_mark(out, 0, 'line_hl_group', 'AIBandUser') and has_mark(out, 3, 'lin
 assert(has_mark(out, 6, 'line_hl_group', 'AIBandRestored'))
 assert(has_mark(out, 0, 'virt_text_pos', 'overlay') and has_mark(out, 0, 'virt_text_pos', 'right_align'))
 assert(not has_mark(out, 6, 'virt_text_pos', 'right_align'), 'restored entry without time shows no time')
+local inline = false
+for _, m in ipairs(out.marks) do
+  if m[1] == 0 and m[2] == 3 and m[3].virt_text_pos == 'inline' then inline = true end
+  if m[1] == 0 and m[3].virt_text_pos == 'overlay' then
+    assert(m[3].virt_text[1][1] == require('ai.ui.highlights').icons().band .. ' ')
+  end
+end
+assert(inline, 'icon is inline text at col 3')
 -- streaming header
 out = t.render({}, { width = 80, open = {}, stream = 'partial', stream_model = 'gpt-6-luna-2026-09-22' })
 assert(out.lines[1] == '## Pi · gpt-6-luna · responding ⋯' and out.lines[2] == 'partial')
@@ -48,6 +56,9 @@ assert(out.lines[2]:find('Assistant stopped: length', 1, true) and has_mark(out,
 assert(out.lines[3] == '· Stopping', 'single-event group renders inline')
 out = t.render({ e1, e2, e3 }, { width = 80, open = { [e1.uid] = true } })
 assert(out.lines[1] == '▾ 3 events' and out.lines[2] == '· Connected' and out.lines[4] == '· Settled: x')
+local multi = t.event('info', 'a\nb')
+out = t.render({ multi }, { width = 80, open = {} })
+assert(#out.lines == 2 and out.lines[1] == '· a' and out.lines[2] == '  b' and t.height(multi) == 2)
 -- blank line between a tool/event run and a following message
 out = t.render({ e4, t.message({ role = 'user', text = 'hi' }) }, { width = 80, open = {} })
 assert(out.lines[2] == '' and out.lines[3]:match('^## You'))
