@@ -1,4 +1,5 @@
 -- Compact progress from tool metadata only; never display results or edit contents.
+local timeline = require('ai.ui.timeline')
 local M = {}
 
 local function short(value)
@@ -28,22 +29,31 @@ local function summary(event)
   elseif name == 'webfetch' then
     detail = short(args.url)
   end
-  return name .. (detail and ': ' .. short(detail) or '')
+  return name, detail and short(detail)
 end
+
+local function key_of(event) return event.toolCallId or event.toolName or 'tool' end
 
 function M.start(session, event)
   session.tools = session.tools or {}
-  local label = summary(event)
-  session.tools[event.toolCallId or event.toolName or 'tool'] = { label = label, started = vim.uv.hrtime() }
-  return 'Tool: ' .. label .. ' [running]'
+  local name, detail = summary(event)
+  local entry = timeline.tool({ call_id = event.toolCallId, name = name, detail = detail, state = 'running', started = vim.uv.hrtime() })
+  session.tools[key_of(event)] = entry
+  return entry
 end
 
 function M.finish(session, event)
-  local key = event.toolCallId or event.toolName or 'tool'
-  local tool = session.tools and session.tools[key]
+  local key = key_of(event)
+  local entry = session.tools and session.tools[key]
   if session.tools then session.tools[key] = nil end
-  local elapsed = tool and string.format(' (%.1fs)', (vim.uv.hrtime() - tool.started) / 1e9) or ''
-  return 'Tool: ' .. (tool and tool.label or summary(event)) .. (event.isError and ' [failed]' or ' [done]') .. elapsed
+  local state = event.isError and 'failed' or 'done'
+  if entry then
+    entry.state = state
+    entry.elapsed = (vim.uv.hrtime() - entry.started) / 1e9
+    return entry
+  end
+  local name, detail = summary(event)
+  return timeline.tool({ call_id = event.toolCallId, name = name, detail = detail, state = state, started = vim.uv.hrtime() })
 end
 
 return M
