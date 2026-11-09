@@ -10,6 +10,16 @@ require('ai').setup(dofile('tests/fixtures/ai_setup.lua').options())
 assert(vim.fn.maparg('<leader>aic', 'n') ~= '')
 vim.cmd.AIChat()
 local conversation = vim.api.nvim_get_current_buf()
+local function text()
+  local parts = { table.concat(vim.api.nvim_buf_get_lines(conversation, 0, -1, false), '\n') }
+  for _, w in ipairs(vim.fn.win_findbuf(conversation)) do
+    local footer = vim.api.nvim_win_get_config(w).footer
+    if type(footer) == 'table' then
+      for _, chunk in ipairs(footer) do parts[#parts + 1] = type(chunk) == 'table' and chunk[1] or chunk end
+    elseif type(footer) == 'string' then parts[#parts + 1] = footer end
+  end
+  return table.concat(parts, '\n')
+end
 local function input(message)
   for _, map in ipairs(vim.api.nvim_buf_get_keymap(conversation, 'n')) do
     if map.lhs == 'i' then map.callback(); break end
@@ -29,13 +39,13 @@ require('ai.profiles').switch('studio', function(ok, why) refused, reason = ok, 
 assert(refused == false and reason:find('web chat has active or queued work', 1, true))
 assert(require('ai.profiles').status().active == 'workbench')
 if not vim.wait(6000, function() return #records() == 2 end, 20) then
-  error('chat did not dispatch: ' .. table.concat(vim.api.nvim_buf_get_lines(conversation, 0, -1, false), '\n'))
+  error('chat did not dispatch: ' .. text())
 end
 assert(records()[1].mode == 'chat')
 assert(records()[1].model == 'gpt-6.1-sol-2026-09-29')
 assert(records()[2].message == 'Second message')
 assert(records()[1].session_id == records()[2].session_id)
-wait_for(function() return table.concat(vim.api.nvim_buf_get_lines(conversation, 0, -1, false), '\n'):find('### Pi\n\ndone', 1, true) ~= nil end)
+wait_for(function() return text():find('## Pi · gpt-6.1-sol\ndone', 1, true) ~= nil end)
 vim.cmd.AIChat()
 vim.cmd.AIChat()
 assert(vim.api.nvim_get_current_buf() == conversation)
@@ -49,7 +59,7 @@ input('After clearing')
 wait_for(function() return #records() == 3 end)
 assert(records()[3].session_id == records()[1].session_id, 'clear changed session identity')
 vim.cmd.AIChatStop()
-if not vim.wait(3000, function() return table.concat(vim.api.nvim_buf_get_lines(conversation, 0, -1, false), '\n'):find('Stopped', 1, true) ~= nil end, 20) then
-  error('chat stop failed: ' .. table.concat(vim.api.nvim_buf_get_lines(conversation, 0, -1, false), '\n'))
+if not vim.wait(3000, function() return text():find('Stopped', 1, true) ~= nil end, 20) then
+  error('chat stop failed: ' .. text())
 end
 print('AI chat tests passed')

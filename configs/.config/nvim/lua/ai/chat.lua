@@ -10,7 +10,6 @@ local chats = {}
 local dispatch, start
 
 local function render(c) view.render(c.view) end
-local function append(c, text) view.event(c.view, 'info', text) end
 local function owns(c) return profiles.allows(c.token) end
 local function same_token(left, right)
   return type(left) == 'table' and type(right) == 'table'
@@ -42,7 +41,8 @@ local function chat()
       return status .. ' | queued: ' .. #c.queue
     end,
     function() return c.session and c.session.stream or '' end,
-    function(text) return submit(c, text) end, profile.name .. ':chat')
+    function(text) return submit(c, text) end, profile.name .. ':chat',
+    function() return c.session and c.session.model and c.session.model.id end)
   chats[key] = c
   return c
 end
@@ -70,8 +70,9 @@ local function record(c, session, event, token)
     protocol.update(session, event.assistantMessageEvent or {})
   elseif event.type == 'message_end' and event.message and event.message.role == 'assistant' then
     local text = protocol.text(event.message)
-    if text ~= '' then view.message(c.view, 'assistant', protocol.clip(text, require('ai.config').options.limits.response_bytes)) end
-    if event.message.stopReason == 'error' then append(c, 'Model error: check provider credentials.') end
+    if text ~= '' then view.message(c.view, 'assistant', protocol.clip(text, require('ai.config').options.limits.response_bytes),
+      { model = session.model and session.model.id }) end
+    if event.message.stopReason == 'error' then view.event(c.view, 'error', 'Model error: check provider credentials.') end
     session.stream, session.blocks = '', {}
   elseif event.type == 'tool_execution_start' then
     view.add(c.view, tools.start(session, event))
@@ -82,10 +83,10 @@ local function record(c, session, event, token)
     c.settled = true
     if c.accepted then finish(c, session, token, request) end
   elseif event.type == 'response' and event.success == false then
-    append(c, 'Unmatched Pi command/parse error')
+    view.event(c.view, 'error', 'Unmatched Pi command/parse error')
   elseif event.type == 'extension_ui_request' and vim.tbl_contains({ 'select', 'confirm', 'input', 'editor' }, event.method) then
     sessions.send(session, { type = 'extension_ui_response', id = event.id, cancelled = true })
-    append(c, 'Pi extension dialog cancelled (unsupported in this UI).')
+    view.event(c.view, 'warn', 'Pi extension dialog cancelled (unsupported in this UI).')
   end
   render(c)
 end
@@ -101,11 +102,11 @@ start = function(c)
   local err
   session, err = sessions.start(c.root, 'chat', 'chat', {
     on_event = function(s, event) record(c, s, event, token) end,
-    on_diagnostic = function(text) if session and owns_session(session) then append(c, text); render(c) end end,
+    on_diagnostic = function(text) if session and owns_session(session) then view.event(c.view, 'warn', text); render(c) end end,
     on_error = function(s, text)
       if not owns_session(s) then return end
       c.stopped, c.busy, c.active_request = true, false, nil
-      append(c, text)
+      view.event(c.view, 'error', text)
       render(c)
     end,
     on_exit = function(s, code, stopping)
@@ -114,7 +115,7 @@ start = function(c)
       if current_slot and c.retiring then c.retiring, c.stopped = false, false end
       if current_slot and profiles.allows(token) and not stopping then
         c.stopped = true
-        append(c, 'Pi exited (' .. code .. '); use :AIChatRestart')
+        view.event(c.view, 'error', 'Pi exited (' .. code .. '); use :AIChatRestart')
       end
       if current_slot and profiles.allows(token) and c.new_pending then
         c.new_pending, c.stopped = false, false
@@ -127,15 +128,16 @@ start = function(c)
       for _, message in ipairs(history) do
         if message.role == 'user' or message.role == 'assistant' then
           local text = protocol.text(message)
-          if text ~= '' then view.message(c.view, message.role == 'user' and 'user' or 'assistant',
-            protocol.clip(text, require('ai.config').options.limits.restored_bytes)) end
+          if text ~= '' then view.message(c.view, message.role,
+            protocol.clip(text, require('ai.config').options.limits.restored_bytes),
+            { restored = true, model = s.model and s.model.id }) end
         end
       end
       render(c)
       dispatch(c, token)
     end,
   })
-  if not session then if profiles.allows(token) then c.stopped = true; append(c, err); render(c) end; return end
+  if not session then if profiles.allows(token) then c.stopped = true; view.event(c.view, 'error', err); render(c) end; return end
   c.session, c.session_token = session, token
   render(c)
 end
@@ -157,12 +159,12 @@ dispatch = function(c, token, expected_head, strict_head)
   if not sessions.send(session, { type = 'prompt', message = message }, function(response)
     if not owns_session() or c.active_request ~= request then return end
     if not response.success or response.data and response.data.disposition == 'handled' then
-      append(c, 'Prompt rejected'); finish(c, session, token, request); return
+      view.event(c.view, 'error', 'Prompt rejected'); finish(c, session, token, request); return
     end
     c.accepted = true
     if c.settled then finish(c, session, token, request) end
   end) then
-    if owns_session() and c.active_request == request then append(c, 'RPC write failed'); finish(c, session, token, request) end
+    if owns_session() and c.active_request == request then view.event(c.view, 'error', 'RPC write failed'); finish(c, session, token, request) end
   end
   render(c)
 end
