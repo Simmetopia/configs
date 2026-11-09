@@ -51,7 +51,8 @@ function M.add(view, entry)
 end
 
 function M.hold_history(view, entries)
-  view.held = entries
+  if view.history_seen then return end
+  view.history_seen, view.held = true, entries
   if #entries > 0 then
     M.event(view, 'info', ('Resumed session — %d earlier messages hidden (H to show)'):format(#entries))
   end
@@ -60,10 +61,12 @@ end
 function M.show_history(view)
   if not view.held or #view.held == 0 then return end
   local list = view.entries_list
-  for i, e in ipairs(view.held) do
+  local at = 0
+  for _, e in ipairs(view.held) do
     if not view.index[e.uid] then
       view.index[e.uid] = true
-      table.insert(list, i, e)
+      at = at + 1
+      table.insert(list, at, e)
     end
   end
   view.held = nil
@@ -149,6 +152,7 @@ local function fold(view, action)
 end
 
 function M.reset(view)
+  view.held, view.history_seen = nil, nil
   M.clear(view)
   if view.input_buf and vim.api.nvim_buf_is_valid(view.input_buf) then
     vim.api.nvim_buf_set_lines(view.input_buf, 0, -1, false, { '' })
