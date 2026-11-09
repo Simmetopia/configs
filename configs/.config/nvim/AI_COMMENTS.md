@@ -61,7 +61,9 @@ by this Neovim instance; no repository scan occurs.
   Active responses remain visible; earlier history after a reconnect is controlled by `ui.restore_history` (or `H`).
 - `:AIChatNew`: start a fresh Sol chat for a new topic, clearing old output
   and the draft without carrying over conversation context.
-- `:AINew`: start a fresh project conversation for the `comments.prompt_role` edit session (also used by `AI!!`).
+- `:AINew`: start a fresh project conversation for the `comments.prompt_role`
+  edit session (shared with `AI!` markers by default, or `AI!!` when
+  `prompt_role = 'expensive'`).
   Luna edit/question and Opus question histories remain unchanged.
   New-conversation commands refuse while work is active, queued, or connecting;
   finish it or stop and wait for exit first. Old Pi transcripts are kept on disk,
