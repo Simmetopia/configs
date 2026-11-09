@@ -14,10 +14,15 @@ local function geometry()
   return width, height, math.max(0, math.floor((vim.o.lines - height) / 2) - 1), math.max(0, math.floor((vim.o.columns - width) / 2))
 end
 
-function M.new(root, title, help, status, stream, submit)
-  local view = { root = root, title = title, help = help, status = status, stream = stream, submit = submit, log = {} }
+function M.new(root, title, help, status, stream, submit, owner)
+  local view = { root = root, title = title, help = help, status = status, stream = stream, submit = submit,
+    owner = owner or 'default', log = {} }
   views[view] = true
   return view
+end
+
+function M.set_submit(view, submit)
+  view.submit = submit
 end
 
 function M.append(view, text)
@@ -87,6 +92,7 @@ function M.input(view)
   if not view.input_buf or not vim.api.nvim_buf_is_valid(view.input_buf) then
     view.input_buf = vim.api.nvim_create_buf(false, true)
     vim.b[view.input_buf].ai_root = view.root
+    pcall(vim.api.nvim_buf_set_name, view.input_buf, ('ai://%s/input/%s'):format(view.owner, vim.fn.sha256(view.root)))
     vim.bo[view.input_buf].bufhidden = 'hide'
     vim.bo[view.input_buf].filetype = 'text'
     local function submit()
@@ -118,6 +124,7 @@ function M.toggle(view)
   if not view.buf or not vim.api.nvim_buf_is_valid(view.buf) then
     view.buf = vim.api.nvim_create_buf(false, true)
     vim.b[view.buf].ai_root = view.root
+    pcall(vim.api.nvim_buf_set_name, view.buf, ('ai://%s/project/%s'):format(view.owner, vim.fn.sha256(view.root)))
     vim.bo[view.buf].bufhidden = 'hide'
     vim.keymap.set('n', '<C-l>', function() M.clear(view) end, { buffer = view.buf, desc = 'Clear displayed AI history' })
     vim.keymap.set('n', 'q', function() M.hide(view) end, { buffer = view.buf })

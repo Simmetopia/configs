@@ -1,4 +1,4 @@
--- Saved-comment workflow: one FIFO per project, four isolated Pi sessions.
+-- Saved-comment workflow: one FIFO per profile/project, four isolated Pi sessions.
 local markers = require('ai.comments.markers')
 local scanner = require('ai.comments.scanner')
 local storage = require('ai.comments.storage')
@@ -7,30 +7,46 @@ local roots = require('ai.project')
 local sessions = require('ai.session')
 local protocol = require('ai.protocol')
 local view = require('ai.ui.view')
+local tools = require('ai.ui.tools')
+local profiles = require('ai.profiles')
 local M = {}
 local projects = {}
 local selected
 local serial = 0
+local transition_save_notice
 local dispatch, finish, enqueue_prompt
 
 local function notify(text, level)
   vim.notify('AI: ' .. text, level or vim.log.levels.INFO)
 end
+local function owns(p) return profiles.allows(p.token) end
+local function same_token(left, right)
+  return type(left) == 'table' and type(right) == 'table'
+    and left.name == right.name and left.generation == right.generation
+end
 
-local function project(root)
-  if projects[root] then return projects[root] end
+local function project(root, selected_profile)
+  local profile = selected_profile or profiles.current()
+  local key = profile.name .. '\n' .. root
+  if projects[key] then
+    local p = projects[key]
+    p.token = profiles.token()
+    view.set_submit(p.view, function(text) return enqueue_prompt(p, text) end)
+    return p
+  end
   local handled = storage.load(root)
-  local p = { root = root, sessions = {}, queue = {}, handled = handled, seen = vim.deepcopy(handled), paused = false }
-  p.view = view.new(root, 'Pi project',
+  local p = { root = root, profile = profile, token = profiles.token(), sessions = {}, session_tokens = {}, queue = {},
+    handled = handled, seen = vim.deepcopy(handled), paused = false }
+  p.view = view.new(root, 'Pi project (' .. profile.name .. ')',
     'i: prompt  Ctrl-L: clear  q: hide  :AINew / :AIStatus / :AIAbort / :AIStop / :AIRestart',
     function()
-      local status = p.new_pending and 'starting new conversation' or p.active and ('busy (' .. p.active.mode .. '/' .. p.active.tier .. ')')
+      local status = p.new_pending and 'starting new conversation' or p.active and ('busy (' .. p.active.mode .. '/' .. p.active.role .. ')')
         or (p.paused and 'stopped (restart required)' or 'idle')
       return 'Status: ' .. status .. ' | queued: ' .. #p.queue
     end,
     function() return p.active and p.active.session.stream or '' end,
-    function(text) enqueue_prompt(p, text) end)
-  projects[root] = p
+    function(text) return enqueue_prompt(p, text) end, profile.name .. ':project')
+  projects[key] = p
   return p
 end
 
@@ -44,7 +60,7 @@ local function render(p) view.render(p.view) end
 
 finish = function(p, session, success)
   local item = p.active
-  if not item or item.session ~= session then return end
+  if not item or item.session ~= session or not profiles.allows(item.token) then return end
   p.active = nil
   session.stream, session.blocks = '', {}
   if success and not item.failed and not item.assistant_error and not next(item.tool_errors or {}) then
@@ -57,11 +73,18 @@ finish = function(p, session, success)
   end
   files.checktime(p)
   render(p)
-  vim.schedule(function() dispatch(p) end)
+  local token, next_item = item.token, p.queue[1]
+  vim.schedule(function()
+    if profiles.allows(token) and same_token(p.token, token) and p.queue[1] == next_item then
+      dispatch(p, token, next_item, true)
+    end
+  end)
 end
 
-local function record(p, session, event)
-  local item = p.active and p.active.session == session and p.active
+local function record(p, session, event, token, key)
+  if not profiles.allows(token) or p.sessions[key] ~= session then return end
+  local item = p.active
+  if item and (item.session ~= session or not same_token(item.token, token)) then item = nil end
   if event.type == 'message_start' and event.message and event.message.role == 'assistant' then
     session.stream, session.blocks = '', {}
   elseif event.type == 'message_update' then
@@ -76,10 +99,10 @@ local function record(p, session, event)
       if item.assistant_error then append(p, 'Assistant stopped: ' .. reason) end
     end
   elseif event.type == 'tool_execution_start' then
-    append(p, 'Tool: ' .. (event.toolName or '?') .. ' running')
+    append(p, tools.start(session, event))
   elseif event.type == 'tool_execution_end' then
     local name = event.toolName or '?'
-    append(p, 'Tool: ' .. name .. (event.isError and ' failed' or ' done'))
+    append(p, tools.finish(session, event))
     if item then
       item.tool_errors = item.tool_errors or {}
       item.tool_errors[name] = event.isError and true or nil
@@ -94,7 +117,6 @@ local function record(p, session, event)
   elseif event.type == 'auto_retry_start' or event.type == 'compaction_start' then
     append(p, 'Pi: ' .. event.type)
   elseif event.type == 'extension_ui_request' then
-    -- Decline unsupported dialogs instead of leaving an extension waiting forever.
     if vim.tbl_contains({ 'select', 'confirm', 'input', 'editor' }, event.method) then
       sessions.send(session, { type = 'extension_ui_response', id = event.id, cancelled = true })
       append(p, 'Pi extension dialog cancelled (unsupported in this UI).')
@@ -110,33 +132,44 @@ local function record(p, session, event)
 end
 
 local start
-start = function(p, mode, tier)
-  local key = mode .. ':' .. tier
+start = function(p, mode, role)
+  local key = mode .. ':' .. role
   if p.sessions[key] then return p.sessions[key] end
-  local session, err = sessions.start(p.root, mode, tier, {
-    on_event = function(s, event) record(p, s, event) end,
-    on_diagnostic = function(text) append(p, text); render(p) end,
+  if not owns(p) then return end
+  local token = profiles.token()
+  if not profiles.allows(token) then return end
+  local session
+  local function owns_session(value)
+    return value and p.sessions[key] == value and profiles.allows(token)
+  end
+  local err
+  session, err = sessions.start(p.root, mode, role, {
+    on_event = function(s, event) record(p, s, event, token, key) end,
+    on_diagnostic = function(text) if session and owns_session(session) then append(p, text); render(p) end end,
     on_error = function(s, text)
+      if not owns_session(s) then return end
       p.paused = true
       append(p, text)
       finish(p, s, false)
       render(p)
     end,
     on_exit = function(s, code, stopping)
-      p.sessions[key] = nil
-      if not stopping then
+      local current_slot = p.sessions[key] == s
+      if current_slot then p.sessions[key], p.session_tokens[key] = nil, nil end
+      if current_slot and profiles.allows(token) and not stopping then
         p.paused = true
         append(p, 'Pi ' .. key .. ' exited (code ' .. code .. '); :AIRestart to reconnect.')
         finish(p, s, false)
         notify('Pi RPC exited; use :AIRestart.', vim.log.levels.ERROR)
       end
-      if p.new_pending == key then
+      if current_slot and profiles.allows(token) and p.new_pending == key then
         p.new_pending, p.paused = nil, false
-        start(p, mode, tier)
+        start(p, mode, role)
       end
-      render(p)
+      if current_slot and profiles.allows(token) then render(p) end
     end,
     on_ready = function(_, history)
+      if not owns_session(session) then return end
       append(p, 'Connected: ' .. key .. ' (persisted project session)')
       for _, message in ipairs(history) do
         if message.role == 'assistant' then
@@ -145,23 +178,29 @@ start = function(p, mode, tier)
         end
       end
       render(p)
-      dispatch(p)
+      dispatch(p, token)
     end,
   })
-  if not session then p.paused = true; append(p, err); render(p); return end
-  p.sessions[key] = session
+  if not session then if profiles.allows(token) then p.paused = true; append(p, err); render(p) end; return end
+  p.sessions[key], p.session_tokens[key] = session, token
   return session
 end
 
-dispatch = function(p)
-  if p.paused or p.active or #p.queue == 0 then render(p); return end
+dispatch = function(p, token, expected_head, strict_head)
+  token = token or p.token
+  if not profiles.allows(token) or not same_token(p.token, token) or p.paused or p.active then render(p); return end
+  if strict_head and p.queue[1] ~= expected_head then return end
+  if #p.queue == 0 then render(p); return end
   local item = p.queue[1]
-  local session = start(p, item.mode, item.tier)
-  if not session or not session.ready then render(p); return end
+  if not profiles.allows(item.token) then return end
+  local session = start(p, item.mode, item.role)
+  local key = item.mode .. ':' .. item.role
+  if not session or not p.session_tokens[key] or not profiles.allows(p.session_tokens[key]) or not session.ready then render(p); return end
   markers.pop(p.queue)
   item.session, p.active = session, item
   append(p, item.label .. ' [sent]')
   if not sessions.send(session, { type = 'prompt', message = item.prompt }, function(response)
+    if not profiles.allows(item.token) or p.sessions[key] ~= session or p.active ~= item then return end
     if not response.success or response.data and response.data.disposition == 'handled' then
       append(p, 'Prompt rejected/handled without a run')
       finish(p, session, false)
@@ -176,11 +215,12 @@ dispatch = function(p)
 end
 
 enqueue_prompt = function(p, text)
-  if p.new_pending then return false end
+  if not owns(p) or p.new_pending then return false end
   serial = serial + 1
-  local tier = require('ai.config').options.comments.prompt_tier
-  local item = { key = 'manual-' .. serial, mode = 'edit', tier = tier,
-    label = 'Prompt (' .. tier .. '): ' .. text:sub(1, 100), prompt = text }
+  local role = require('ai.config').options.comments.prompt_role
+  local item = { key = 'manual-' .. serial, mode = 'edit', role = role, token = profiles.token(),
+    label = 'Prompt (' .. role .. '): ' .. text:sub(1, 100),
+    prompt = require('ai.prompts').manual(text, p.prompt_path) }
   markers.enqueue(p.queue, p.seen, item)
   append(p, item.label .. ' [queued]')
   dispatch(p)
@@ -191,41 +231,65 @@ function M.saved(buf)
   if not root or vim.bo[buf].modified then return end
   local match, lines = files.matches(path, buf)
   if not match then return end
+  local found = scanner.scan(buf, lines, vim.bo[buf].filetype)
+  if #found == 0 then return end
+  local token = profiles.token()
+  if not profiles.allows(token) then
+    if transition_save_notice ~= token.generation then
+      transition_save_notice = token.generation
+      notify('Profile transition is locked; saved markers were retained—resave after switching or recovery.', vim.log.levels.WARN)
+    end
+    return
+  end
+  transition_save_notice = nil
   local p = project(root)
-  for _, marker in ipairs(scanner.scan(buf, lines, vim.bo[buf].filetype)) do
+  if not owns(p) then return end
+  for _, marker in ipairs(found) do
     local mode = marker.kind:sub(1, 1) == '?' and 'question' or 'edit'
-    local tier = #marker.kind == 2 and 'opus' or 'luna'
+    local role = #marker.kind == 2 and 'expensive' or 'cheap'
+    local key = vim.fn.sha256(markers.key(path, marker))
     local item = {
-      key = vim.fn.sha256(markers.key(path, marker)), marker = marker, path = path, buf = buf, mode = mode, tier = tier,
+      key = key, marker = marker, path = path, buf = buf, mode = mode, role = role, token = token,
       prompt = require('ai.prompts').comment(root, path, marker, lines, mode),
-      label = path:sub(#root + 2) .. ':' .. marker.number .. ' AI' .. marker.kind .. ' [' .. tier .. '] ' .. marker.instruction:sub(1, 100),
+      label = path:sub(#root + 2) .. ':' .. marker.number .. ' AI' .. marker.kind .. ' [' .. role .. '] ' .. marker.instruction:sub(1, 100),
     }
-    if markers.enqueue(p.queue, p.seen, item) then append(p, item.label .. ' [queued]'); dispatch(p) end
+    if not p.handled[key] and markers.enqueue(p.queue, p.seen, item) then
+      append(p, item.label .. ' [queued]')
+      dispatch(p)
+    end
   end
 end
 
 function M.refresh(buf)
+  if not profiles.allows(profiles.token()) then return end
   local root = roots.for_buffer(buf)
-  if root and projects[root] and not vim.bo[buf].modified then files.checktime(projects[root]) end
+  if root and projects[profiles.current().name .. '\n' .. root] and not vim.bo[buf].modified then
+    files.checktime(projects[profiles.current().name .. '\n' .. root])
+  end
 end
 
 function M.toggle()
+  if not profiles.allows(profiles.token()) then return notify('Profile transition is locked; retry after switching or recovery.', vim.log.levels.WARN) end
+  local buf = vim.api.nvim_get_current_buf()
+  local _, path = roots.for_buffer(buf)
   local p = current()
   if not p then return notify('Open a saved project file first.', vim.log.levels.WARN) end
-  for root, other in pairs(projects) do if root ~= p.root then view.hide(other.view) end end
-  view.toggle(p.view)
+  for _, other in pairs(projects) do if other.profile.name == p.profile.name and other.root ~= p.root then view.hide(other.view) end end
+  if view.toggle(p.view) and not vim.b[buf].ai_root then p.prompt_path = path end
 end
 
 function M.clear()
+  if not profiles.allows(profiles.token()) then return notify('Profile transition is locked; retry after switching or recovery.', vim.log.levels.WARN) end
   local p = current()
   if p then view.clear(p.view) end
 end
 
 function M.new()
+  if not profiles.allows(profiles.token()) then return notify('Profile transition is locked; retry after switching or recovery.', vim.log.levels.WARN) end
   local p = current()
   if not p then return notify('Open a saved project file first.', vim.log.levels.WARN) end
-  local tier = require('ai.config').options.comments.prompt_tier
-  local key = 'edit:' .. tier
+  local role = require('ai.config').options.comments.prompt_role
+  local key = 'edit:' .. role
   local session = p.sessions[key]
   local transitioning = false
   for _, s in pairs(p.sessions) do
@@ -234,7 +298,9 @@ function M.new()
   if p.new_pending or p.active or #p.queue > 0 or transitioning then
     return notify('Finish pending work or use :AIStop and wait for exit before :AINew.', vim.log.levels.WARN)
   end
-  local id, err = require('ai.session_ids').fresh(p.root, 'edit', tier)
+  local identity, identity_err = sessions.identity(p.root, 'edit', role, p.profile)
+  if not identity then return notify('AI: ' .. identity_err, vim.log.levels.ERROR) end
+  local id, err = require('ai.session_ids').fresh(identity)
   if not id then return notify(err, vim.log.levels.ERROR) end
   view.reset(p.view)
   if session then
@@ -242,7 +308,7 @@ function M.new()
     sessions.stop(session)
   else
     p.paused = false
-    start(p, 'edit', tier)
+    start(p, 'edit', role)
   end
   render(p)
 end
@@ -263,14 +329,18 @@ local function clear_queue(p)
 end
 
 function M.abort()
+  if not profiles.allows(profiles.token()) then return notify('Profile transition is locked; retry after switching or recovery.', vim.log.levels.WARN) end
   local p = current()
   if not p then return end
   clear_queue(p)
   if p.active then
-    p.active.failed = true
-    local s = p.active.session
+    local item, token, s = p.active, p.active.token, p.active.session
+    local key = item.mode .. ':' .. item.role
+    item.failed = true
     sessions.send(s, { type = 'clear_queue' })
     sessions.send(s, { type = 'abort' }, function(response)
+      if not profiles.allows(token) or not same_token(p.token, token) or p.active ~= item
+        or p.sessions[key] ~= s or item.session ~= s then return end
       if not response.success then append(p, 'Abort failed; use :AIStop') end
       render(p)
     end)
@@ -289,6 +359,7 @@ local function stop_project(p)
 end
 
 function M.stop()
+  if not profiles.allows(profiles.token()) then return notify('Profile transition is locked; retry after switching or recovery.', vim.log.levels.WARN) end
   local p = current()
   if p then stop_project(p) end
 end
@@ -300,12 +371,37 @@ function M.stop_all()
   end
 end
 
+function M.busy_reason()
+  for _, p in pairs(projects) do
+    if p.active or #p.queue > 0 or p.new_pending then return 'project conversation has active or queued work' end
+    for _, s in pairs(p.sessions) do
+      if not s.ready or s.client.stopping then return 'project Pi session is connecting or exiting' end
+    end
+  end
+end
+
+function M.retire()
+  for _, p in pairs(projects) do
+    for _, s in pairs(p.sessions) do sessions.stop(s) end
+    view.hide(p.view)
+  end
+end
+
+function M.log(root, text, role, profile_name)
+  local selected_profile = profile_name and require('ai.config').profile(profile_name) or profiles.current()
+  if selected_profile.name ~= profiles.current().name then return end
+  local p = project(root, selected_profile)
+  if role then view.message(p.view, role, text) else append(p, text) end
+  render(p)
+end
+
 function M.restart()
+  if not profiles.allows(profiles.token()) then return notify('Profile transition is locked; retry after switching or recovery.', vim.log.levels.WARN) end
   local p = current()
   if not p then return end
   if next(p.sessions) or p.active then return notify('Stop sessions with :AIStop, then retry :AIRestart.', vim.log.levels.WARN) end
   p.paused = false
-  start(p, 'edit', require('ai.config').options.comments.prompt_tier)
+  start(p, 'edit', require('ai.config').options.comments.prompt_role)
 end
 
 return M

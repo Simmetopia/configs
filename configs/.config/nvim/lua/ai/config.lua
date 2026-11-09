@@ -1,20 +1,17 @@
--- Defaults describe policy, not credentials. Override these in require('ai').setup().
+-- Normalized plugin options and per-profile model descriptors.
 local M = {}
 local source = debug.getinfo(1, 'S').source:sub(2)
 local package_root = vim.fs.dirname(source)
 
+local thinking_levels = { off = true, minimal = true, low = true, medium = true, high = true, xhigh = true, max = true }
+
 M.defaults = {
   executable = 'pi',
-  models = {
-    luna = { provider = 'lego-openai', id = 'gpt-6-luna-2026-09-22' },
-    sol = { provider = 'lego-openai', id = 'gpt-6.1-sol-2026-09-29' },
-    opus = { provider = 'lego-anthropic', id = 'eu.anthropic.claude-opus-5-5', thinking = 'medium' },
-  },
-  mappings = { project = '<leader>aip', chat = '<leader>aic' },
-  comments = { enabled = true, prompt_tier = 'opus' },
+  mappings = { project = '<leader>aip', chat = '<leader>aic', help = '<leader>aih' },
+  help = { role = 'cheap', bang_role = 'expensive', context_lines = 30, selection_bytes = 200 * 1024 },
+  comments = { enabled = true, prompt_role = 'cheap' },
   chat = {
-    tier = 'sol',
-    search_extension = 'npm:pi-web-search@1.6.0',
+    role = 'chat',
     extension = vim.fs.joinpath(package_root, 'pi-extension', 'index.ts'),
   },
   limits = {
@@ -31,15 +28,76 @@ M.defaults = {
 }
 M.options = vim.deepcopy(M.defaults)
 
+local function nonempty_string(value)
+  return type(value) == 'string' and value:match('%S') ~= nil
+end
+
+local function descriptor(value, profile_name, role)
+  assert(type(value) == 'table', ('AI: profile %s model %s must be a descriptor'):format(profile_name, role))
+  assert(nonempty_string(value.provider), ('AI: profile %s model %s requires provider'):format(profile_name, role))
+  assert(nonempty_string(value.id), ('AI: profile %s model %s requires id'):format(profile_name, role))
+  local thinking = value.thinking
+  if thinking == nil then thinking = 'off' end
+  assert(type(thinking) == 'string' and thinking_levels[thinking],
+    ('AI: profile %s model %s has invalid thinking level'):format(profile_name, role))
+  return { provider = value.provider, id = value.id, thinking = thinking }
+end
+
 function M.setup(options)
-  local result = vim.tbl_deep_extend('force', vim.deepcopy(M.defaults), options or {})
-  for _, tier in ipairs({ result.comments.prompt_tier, result.chat.tier, 'luna', 'opus' }) do
-    local model = result.models[tier]
-    assert(model and type(model.provider) == 'string' and type(model.id) == 'string',
-      'AI: invalid model tier ' .. tostring(tier))
+  assert(type(options) == 'table', 'AI: setup options must be a table')
+  local result = vim.tbl_deep_extend('force', vim.deepcopy(M.defaults), options)
+  assert(nonempty_string(result.active_profile), 'AI: active_profile must be a nonempty name')
+  assert(type(result.profiles) == 'table' and next(result.profiles) ~= nil, 'AI: profiles must be a nonempty map')
+  assert(result.profiles[result.active_profile] ~= nil, 'AI: active_profile must name a configured profile')
+
+  local profiles = {}
+  for name, value in pairs(result.profiles) do
+    assert(nonempty_string(name), 'AI: profile names must be nonempty strings')
+    assert(type(value) == 'table', 'AI: profile ' .. name .. ' must be a table')
+    assert(nonempty_string(value.agent_dir), 'AI: profile ' .. name .. ' requires agent_dir')
+    if value.models_file ~= nil then
+      assert(nonempty_string(value.models_file), 'AI: profile ' .. name .. ' models_file must be a nonempty path')
+    end
+    assert(type(value.models) == 'table', 'AI: profile ' .. name .. ' requires models')
+    local chat = descriptor(value.models.chat, name, 'chat')
+    local models = { chat = chat }
+    for _, role in ipairs({ 'cheap', 'expensive' }) do
+      models[role] = value.models[role] == nil and vim.deepcopy(chat) or descriptor(value.models[role], name, role)
+    end
+    profiles[name] = {
+      name = name,
+      agent_dir = value.agent_dir,
+      models_file = value.models_file,
+      models = models,
+    }
   end
+  result.profiles = profiles
+  result.comments.prompt_role = result.comments.prompt_role or 'cheap'
+  result.chat.role = result.chat.role or 'chat'
+  assert(result.comments.prompt_role == 'cheap' or result.comments.prompt_role == 'expensive' or result.comments.prompt_role == 'chat',
+    'AI: comments.prompt_role must be chat, cheap, or expensive')
+  assert(result.chat.role == 'chat' or result.chat.role == 'cheap' or result.chat.role == 'expensive',
+    'AI: chat.role must be chat, cheap, or expensive')
+  assert(result.help.role == 'cheap' or result.help.role == 'expensive' or result.help.role == 'chat',
+    'AI: help.role must be chat, cheap, or expensive')
+  assert(result.help.bang_role == 'cheap' or result.help.bang_role == 'expensive' or result.help.bang_role == 'chat',
+    'AI: help.bang_role must be chat, cheap, or expensive')
+
   M.options = result
   return result
+end
+
+function M.profile(name)
+  local profile = M.options.profiles and M.options.profiles[name]
+  assert(profile, 'AI: unknown profile ' .. tostring(name))
+  return profile
+end
+
+function M.model(profile, role)
+  assert(type(profile) == 'table' and type(profile.models) == 'table', 'AI: invalid profile')
+  local model = profile.models[role]
+  assert(model, 'AI: unknown model role ' .. tostring(role))
+  return model
 end
 
 return M

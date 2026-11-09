@@ -2,6 +2,7 @@
 databricks-cli = { version = "latest", exe = "databricks" }
 kubectl = "latest"
 node = "latest"
+pi = "latest"
 pulumi = "3.239.0"
 rust = "latest"
 usage = "latest"
@@ -16,11 +17,6 @@ legacy_version_file_disable_tools = ['python'] # disable for specific tools
 # configure `mise install` to always keep the downloaded archive
 always_keep_download = false        # deleted after install by default
 always_keep_install = false         # deleted on failure by default
-
-# configure how frequently (in minutes) to fetch updated plugin repository changes
-# this is updated whenever a new runtime is installed
-# (note: this isn't currently implemented but there are plans to add it: https://github.com/jdx/mise/issues/128)
-plugin_autoupdate_last_check_duration = '1 week' # set to 0 to disable updates
 
 verbose = false     # set to true to see full installation output, see `MISE_VERBOSE`
 asdf_compat = false # set to true to ensure .tool-versions will be compatible with asdf, see `MISE_ASDF_COMPAT`

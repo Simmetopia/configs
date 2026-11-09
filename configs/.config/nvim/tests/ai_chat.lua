@@ -6,7 +6,7 @@ local function records()
   return vim.tbl_map(vim.json.decode, lines)
 end
 vim.fn.delete(vim.env.AI_TEST_LOG)
-require('ai').setup()
+require('ai').setup(dofile('tests/fixtures/ai_setup.lua').options())
 assert(vim.fn.maparg('<leader>aic', 'n') ~= '')
 vim.cmd.AIChat()
 local conversation = vim.api.nvim_get_current_buf()
@@ -24,6 +24,10 @@ local function input(message)
 end
 input('Hi from web chat')
 input('Second message')
+local refused, reason
+require('ai.profiles').switch('studio', function(ok, why) refused, reason = ok, why end)
+assert(refused == false and reason:find('web chat has active or queued work', 1, true))
+assert(require('ai.profiles').status().active == 'workbench')
 if not vim.wait(6000, function() return #records() == 2 end, 20) then
   error('chat did not dispatch: ' .. table.concat(vim.api.nvim_buf_get_lines(conversation, 0, -1, false), '\n'))
 end

@@ -1,7 +1,8 @@
 # AI plugin: architecture and manual changes
 
-This is one **Neovim plugin** with two workflows and a small **Pi companion
-extension**. Lua must run in Neovim (buffers, windows, saves); TypeScript must
+This is one **Neovim plugin** with saved-comment and web-chat workflows plus
+asynchronous selection help, and a small **Pi companion extension**. Lua must
+run in Neovim (buffers, windows, saves); TypeScript must
 run in Pi (the webfetch tool). They communicate through Pi's JSONL RPC protocol.
 Consolidating the entry points does not mean combining session contexts or tools.
 
@@ -10,7 +11,7 @@ Consolidating the entry points does not mean combining session contexts or tools
 - `plugin/ai.lua`: your local settings; the single Neovim entry point.
 - `lua/ai/config.lua`: all default options, with no credentials.
 - `lua/ai/init.lua`: commands, mappings, autocmds, and shutdown registration.
-- [Usage and safeguards](../AI_COMMENTS.md): comment markers and commands.
+- [Usage and safeguards](../lua/ai/AI_COMMENTS.md): comment markers and commands.
 
 The implementation uses Neovim 0.12+ APIs (`vim.uv`, `vim.fs`, Tree-sitter) and
 Pi's current RPC protocol including `agent_settled`. The config's native package
@@ -23,7 +24,8 @@ credentials through Pi, never through this plugin.
 plugin/ai.lua                setup and local overrides
 lua/ai/
   init.lua                  public setup; all global registrations
-  config.lua                model tiers, mappings, limits, UI dimensions
+  config.lua                profile model roles, mappings, limits, UI dimensions
+  profiles.lua              profile preparation, transitions, and generation ownership
   prompts.lua               model-facing chat and comment instructions
   project.lua               canonical paths and buffer project lookup
   protocol.lua              JSONL framing, text blocks, stream reconstruction
@@ -63,46 +65,82 @@ Edit `plugin/ai.lua`:
 
 ```lua
 require('ai').setup({
-  models = {
-    -- Keep the tier names: single markers select luna, doubled markers select opus.
-    luna = { provider = 'your-provider', id = 'your-model' },
-    opus = { provider = 'your-provider', id = 'your-reasoning-model', thinking = 'medium' },
-    sol = { provider = 'your-provider', id = 'your-chat-model' },
+  active_profile = 'default',
+  profiles = {
+    default = {
+      agent_dir = vim.fn.stdpath('data') .. '/pi-nvim/default',
+      models_file = vim.fn.expand('~/.pi/agent/models.json'),
+      models = {
+        chat = { provider = 'your-provider', id = 'your-chat-model', thinking = 'high' },
+        cheap = { provider = 'your-provider', id = 'your-fast-model', thinking = 'high' },
+        expensive = { provider = 'your-provider', id = 'your-reasoning-model', thinking = 'medium' },
+      },
+    },
   },
-  mappings = { project = '<leader>aip', chat = '<leader>aic' },
-  comments = { enabled = true, prompt_tier = 'opus' },
-  chat = { tier = 'sol' },
+  mappings = { project = '<leader>aip', chat = '<leader>aic', help = '<leader>aih' },
+  help = { role = 'cheap', bang_role = 'expensive' },
+  comments = { enabled = true, prompt_role = 'cheap' },
+  chat = { role = 'chat', search_extension = '/absolute/path/to/pi-web-search/src/index.ts' },
   ui = { width = 0.8, height = 0.75, conceallevel = 0 },
   limits = { history_lines = 350, response_bytes = 20000 },
 })
 ```
 
-Set either mapping to `false` to disable it. Set `comments.enabled = false` to
-stop automatic saved-marker dispatch (commands and manual prompts remain).
-Typed project prompts use Opus 5.5 by default; `prompt_tier` does not change
-marker routing. Single markers use Luna, doubled markers use Opus, and general
-web chat uses Sol with its separate web-only tool loadout.
-The default model names reflect this configuration's LEGO gateway; other users
-must supply models available in their own Pi configuration.
+The `chat`, `cheap`, and `expensive` role descriptors each require a Pi provider
+and model ID; `thinking` is optional and defaults to `off`. `models_file` is an
+optional readable local model catalogue. The profile's `agent_dir` remains
+separate from both the terminal Pi agent directory and other profile agent
+directories. Profile setup may create `models.json` there as a symlink to the
+explicit `models_file`; it never copies or shares `auth.json`. Provision provider
+authentication per profile using Pi's normal authentication setup, or use
+provider environment variables. Do not put credentials in model descriptors.
+
+`:AIProfile` opens the profile picker, `:AIProfile <name>` selects a profile
+when all workflows are idle, and `:AIProfileStatus` shows active roles and
+transition state. Each profile has separate Pi histories and generation-scoped
+workflow callbacks. `:AIHelpModel` overrides remain memory-only and profile
+scoped. Set `comments.enabled = false` to stop automatic saved-marker dispatch;
+commands and manual prompts remain. Single markers use `cheap`, doubled markers
+use `expensive`; help defaults to `cheap` and bang help to `expensive`; web chat
+uses `chat` with its separate web-only tool loadout.
+The model names in this dotfiles configuration reflect its LEGO gateway; other
+users must supply models available from their providers.
 
 A resumed model mismatch is deliberately refused. Stop the relevant session,
-then choose a new session identity or manage the existing session in Pi if you
-change a tier's model; don't silently replay a different model's context.
+then choose a new session identity or manage the existing profile session in Pi
+if you change a role's model; don't silently replay a different model's context.
 
 ### Instructions and tool permissions
 
 Edit `prompts.lua` to change wording. Edit `session.lua` to change CLI loadouts:
 
-| Workflow | Tools/resources |
-|---|---|
-| Edit | Inherits Pi's normal tools, extensions, resources and trust policy |
-| Question | Only `read,grep,find,ls`; extensions disabled |
-| Web chat | Only `web_search,webfetch`; explicit extensions; no context files, skills or templates |
+| Workflow | Active tools | Explicit extensions |
+|---|---|---|
+| Edit/manual | `read,bash,edit,write` | none |
+| Question | `read,grep,find,ls` | none |
+| Selection help | `read,grep,find,ls,replace_selection` | companion |
+| Web chat | `web_search,webfetch` | configured local search entry and companion |
 
-The native-search implementation remains the pinned external package
-`npm:pi-web-search@1.6.0`; we do not vendor or rewrite it. Chat requires a
-provider/gateway supporting that package's native search. Change its version
-in `config.lua` or override `chat.search_extension`.
+Every workflow passes CLI flags to suppress automatic Pi extensions, MCP,
+skills, prompt templates, context files, and appended system-prompt discovery,
+and passes `--no-themes`. On Pi 1.5.0 the TUI still lists the agent theme;
+RPC theme discovery is unobservable because `getAllThemes()` is an empty stub,
+so the flag is not evidence of complete theme-registry suppression. Each
+workflow receives its plugin-owned mode prompt. This is a practical CLI policy,
+not a sandbox: read tools can access files available to Pi, project
+trust/permission behavior still applies, and the edit workflow is intentionally
+project-mutation capable.
+
+The search extension is the pinned external `pi-web-search@1.6.0` package, not
+vendored. Chat requires a local installed entry point configured with
+`chat.search_extension`; missing/moved packages fail closed without installing
+or downloading. In the installed Pi 1.5.0 probe, a selected search package with
+a missing dependency exits at startup with a local dependency diagnostic,
+before the capability handshake; this is not a returned readiness status.
+`PI_WEB_SEARCH_CONFIG` is inherited when set, otherwise the
+extension may read `web-search.json` from the profile agent directory. A separate
+search-model override may use different credentials and incur separate costs;
+loading the extension does not verify live gateway/search compatibility.
 
 ### Comment syntax and cleanup
 
@@ -130,7 +168,7 @@ Tree-sitter highlighting. Fence tags are visible by default for readability.
 1. `BufWritePost` calls `comments.saved()`.
 2. Resolve a canonical project root; compare disk and buffer; scan markers.
 3. Build a bounded prompt and fingerprint; deduplicate and enqueue FIFO.
-4. Start the appropriate `mode:tier` session on demand.
+4. Start the appropriate `mode:role` session on demand.
 5. RPC correlates response IDs. Session startup validates model/thinking and
    restores recent history **before** sending new prompts.
 6. Stream text blocks by `contentIndex`; finalized `message_end` is authoritative.
@@ -146,19 +184,23 @@ Markdown presentation and graceful shutdown with a signal fallback.
 
 ## Persistence and compatibility
 
-Old comment session IDs, chat session IDs, and the `stdpath('state')/ai-comments/`
-fingerprint directory are preserved. Existing histories continue to resume until
-`:AIChatNew` or `:AINew` explicitly selects a fresh identity. Current identities
-are saved atomically under `stdpath('state')/ai-sessions/`; Pi's previous
-transcripts are never deleted. New commands wait for the idle process to exit
+Handled-marker fingerprints remain in the root-global
+`stdpath('state')/ai-comments/` store. Session identities include the active
+profile, role, model, and canonical agent/project directories; pointer files are
+saved atomically under `stdpath('state')/ai-profile-sessions/`. Earlier session
+pointers and transcripts are never imported or deleted. Each profile's current
+history resumes independently; `:AIChatNew` or `:AINew` explicitly selects a
+fresh identity for just that conversation. New commands wait for the idle process to exit
 before reconnecting with the new identity, preserving model and tool policies.
 They refuse active/queued/connecting work, clear the display and draft, and do
-not carry over conversation context. `:AINew` resets only the configured manual
-edit tier (Opus by default), shared with its edit markers—not question or Luna
-histories, handled-marker fingerprints, project files, or context instructions.
-Old Lua module names (`ai_comments`, `ai_chat`) and their two plugin entry points
-are removed; consumers should use `require('ai').setup()`.
-Commands remain unchanged, as do `<leader>aip` and `<leader>aic`.
+not carry over conversation context. `:AINew` resets only the configured
+`comments.prompt_role` edit session (cheap by default, shared with `AI!`), not
+other edit/question histories, handled-marker fingerprints, project files, or
+context instructions.
+Old Lua module names (`ai_comments`, `ai_chat`) are removed; consumers should
+use `require('ai').setup()`. Profile selection is available through
+`:AIProfile` and `:AIProfileStatus`. Existing project/chat mappings remain
+unchanged, with a profile-configurable selection-help mapping.
 
 Pi stores the full transcript. The Neovim view is bounded; restored responses
 and streamed display are clipped from the start to preserve opening Markdown
@@ -174,16 +216,16 @@ Copy `lua/ai/` (including `pi-extension/`), the docs, and tests into a plugin re
 Neovim's runtimepath and call `require('ai').setup(...)` from your configuration.
 For manual setup, omit the dotfiles-specific `plugin/ai.lua`, or keep exactly one
 entry point; an automatic setup runs before a later explicit setup can change it.
-The companion lives in `lua/ai/pi-extension/` alongside the Lua modules, making
-the AI package self-contained. Neovim does not execute its TypeScript files;
-Pi loads `index.ts` explicitly. The path is resolved relative to
+The companion lives in `lua/ai/pi-extension/` alongside the Lua modules.
+Neovim does not execute its TypeScript files; Pi loads `index.ts` explicitly
+for selection help and web chat. The path is resolved relative to
 `lua/ai/config.lua`, not to `~/.config/nvim`, so package installs work too.
 
 The Pi manifest exposes only `index.ts`, preventing helper files from being
 loaded as independent extensions. Its host-provided packages are peer dependencies.
 It is marked private to prevent accidental publication; review name, license,
-version and dependency policy before publishing. Neovim loads the companion
-explicitly for chat; don't also autoload it into all Pi edit/question sessions.
+version and dependency policy before publishing. The companion is not autoloaded
+into edit/question sessions; selection help and chat request it explicitly.
 
 ## Tests
 
@@ -199,7 +241,7 @@ and reconnecting to the new identity. The runner isolates Neovim state and mock
 transcripts in disposable directories.
 
 Offline tests cover markers, fallback/Tree-sitter scanning, cleanup, queues,
-model-tier isolation, process exit/restart, Markdown language injections,
+model-role isolation, process exit/restart, Markdown language injections,
 response framing, multi-block streaming, restored string messages, model
 mismatch, startup timeout, and idempotent unified setup. The mock executable is
 `tests/bin/pi`. They require the Lua parser for scanner coverage; Markdown
@@ -207,7 +249,8 @@ rendering tests require Markdown parsers. Python-specific coverage runs when
 its parser is available.
 
 `tests/ai_comments_live.lua` is an **opt-in**, billable real-provider check in a
-disposable directory; see the usage guide. It is not run by the offline suite.
+disposable project; see the usage guide for its explicit model catalogue and
+isolated profile-agent setup. It is not run by the offline suite.
 Loading the companion can be checked without a model prompt:
 
 ```sh

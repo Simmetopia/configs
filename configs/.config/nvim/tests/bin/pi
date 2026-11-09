@@ -1,18 +1,50 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """Deterministic JSONL Pi double for Neovim integration tests (no network)."""
 import json
 import os
 import sys
 import time
 
-mode = ("chat" if "--tools" in sys.argv and sys.argv[sys.argv.index("--tools") + 1] == "web_search,webfetch" else
-        "question" if "--tools" in sys.argv else "edit")
+gate_dir = os.path.join(os.environ.get("AI_TEST_PROFILE_DIR", ""), "gates")
+def gate(name):
+    if not gate_dir:
+        return
+    hold = os.path.join(gate_dir, name + ".hold")
+    if not os.path.exists(hold):
+        return
+    arrived = os.path.join(gate_dir, name + ".arrived")
+    with open(arrived, "w"):
+        pass
+    while os.path.exists(hold):
+        time.sleep(0.01)
+    try:
+        os.unlink(arrived)
+    except FileNotFoundError:
+        pass
+
+tools_arg = sys.argv[sys.argv.index("--tools") + 1] if "--tools" in sys.argv else None
+mode = {
+    "read,bash,edit,write": "edit",
+    "read,grep,find,ls": "question",
+    "read,grep,find,ls,replace_selection": "selection",
+    "web_search,webfetch": "chat",
+}.get(tools_arg)
+assert mode is not None, "unrecognized explicit tool policy"
 provider = sys.argv[sys.argv.index("--provider") + 1]
 model = sys.argv[sys.argv.index("--model") + 1]
-session_id = sys.argv[sys.argv.index("--session-id") + 1]
+session_id = sys.argv[sys.argv.index("--session-id") + 1] if "--session-id" in sys.argv else None
+if mode == "chat" and session_id is None:
+    session_id = "latest-" + os.path.basename(os.path.normpath(os.environ.get("PI_CODING_AGENT_DIR", "")))
 thinking = "off"
+agent_dir = os.environ.get("PI_CODING_AGENT_DIR")
+session_dir = sys.argv[sys.argv.index("--session-dir") + 1]
+assert os.path.realpath(session_dir) == os.path.realpath(os.path.join(agent_dir, "sessions"))
+for flag in ("--no-approve", "--no-extensions", "--no-mcp", "--no-skills", "--no-prompt-templates", "--no-themes", "--no-context-files"):
+    assert flag in sys.argv, f"missing suppression flag {flag}"
+assert sys.argv[sys.argv.index("--append-system-prompt") + 1] == ""
+assert "--system-prompt" in sys.argv
 history_dir = os.environ.get("AI_TEST_HISTORY_DIR")
-history_path = os.path.join(history_dir, session_id + ".json") if history_dir else None
+history_path = os.path.join(history_dir, os.path.basename(agent_dir), session_id + ".json") if history_dir and session_id else None
 history = []
 if history_path and os.path.exists(history_path):
     with open(history_path) as source:
@@ -21,21 +53,28 @@ assert (provider, model) in {
     ("lego-openai", "gpt-6-luna-2026-09-22"),
     ("lego-openai", "gpt-6.1-sol-2026-09-29"),
     ("lego-anthropic", "eu.anthropic.claude-opus-5-5"),
+    ("fixture-openai", "arbitrary-chat-model"),
 }
-if mode == "question":
-    assert sys.argv[sys.argv.index("--tools") + 1] == "read,grep,find,ls"
-    assert "--no-extensions" in sys.argv
+assert bool(os.environ.get("PATH")) and os.environ.get("PATH") == os.environ.get("AI_TEST_EXPECTED_PATH")
+assert os.environ.get("AI_TEST_FAKE_CREDENTIAL") == "fixture-only-not-a-real-credential"
+with open(os.environ["AI_TEST_ARGV_LOG"], "a") as out:
+    out.write(json.dumps({"mode": mode, "argv": sys.argv[1:], "agent_dir": agent_dir,
+                          "path_preserved": os.environ.get("PATH") == os.environ.get("AI_TEST_EXPECTED_PATH"),
+                          "fake_credential_preserved": os.environ.get("AI_TEST_FAKE_CREDENTIAL") == "fixture-only-not-a-real-credential"}) + "\n")
+plugin_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+expected_extension = os.path.join(plugin_root, "lua", "ai", "pi-extension", "index.ts")
+extensions = [sys.argv[i + 1] for i, arg in enumerate(sys.argv[:-1]) if arg == "--extension"]
 if mode == "chat":
-    assert "--no-extensions" in sys.argv
-    extensions = [sys.argv[i + 1] for i, arg in enumerate(sys.argv[:-1]) if arg == "--extension"]
-    assert extensions[0] == "npm:pi-web-search@1.6.0"
-    assert extensions[1].endswith("/lua/ai/pi-extension/index.ts")
-    assert "--no-context-files" in sys.argv
-    assert "--system-prompt" in sys.argv
-    assert "--no-skills" in sys.argv
-    assert "--no-prompt-templates" in sys.argv
-if provider == "lego-anthropic":
-    assert sys.argv[sys.argv.index("--thinking") + 1] == "medium"
+    assert len(extensions) == 2 and extensions[0].endswith("search-package/src/index.ts")
+    assert extensions[1] == expected_extension
+elif mode == "selection":
+    assert len(extensions) == 1 and extensions[0] == expected_extension
+else:
+    assert not extensions
+if mode == "selection":
+    assert "--no-session" in sys.argv and session_id is None
+else:
+    assert session_id is not None
 for line in sys.stdin:
     command = json.loads(line)
     identifier = command.get("id")
@@ -44,16 +83,72 @@ for line in sys.stdin:
         sys.stdout.write(json.dumps(obj) + "\n")
         sys.stdout.flush()
     if typ == "get_state":
+        gate("startup")
         if os.environ.get("AI_TEST_BEHAVIOR") == "timeout":
             continue
         selected = "wrong-model" if os.environ.get("AI_TEST_BEHAVIOR") == "mismatch" else model
-        emit({"type": "response", "id": identifier, "command": typ, "success": True, "data": {"isStreaming": False, "thinkingLevel": thinking, "model": {"provider": provider, "id": selected}}})
+        actual_thinking = "low" if os.environ.get("AI_TEST_BEHAVIOR") == "clamp" and thinking != "off" else thinking
+        emit({"type": "response", "id": identifier, "command": typ, "success": True, "data": {"isStreaming": False, "thinkingLevel": actual_thinking, "model": {"provider": provider, "id": selected}}})
+    elif typ == "get_available_thinking_levels":
+        levels = ["off"] if os.environ.get("AI_TEST_BEHAVIOR") == "unsupported" else ["off", "minimal", "low", "medium", "high", "xhigh", "max"]
+        emit({"type": "response", "id": identifier, "command": typ, "success": True, "data": {"levels": levels}})
+    elif typ == "get_commands":
+        commands = [] if os.environ.get("AI_TEST_BEHAVIOR") == "missing-command" else [{"name": "nvim_ai_capabilities", "source": "extension"}]
+        emit({"type": "response", "id": identifier, "command": typ, "success": True, "data": {"commands": commands}})
     elif typ == "set_thinking_level":
-        thinking = command["level"]
+        thinking = "low" if os.environ.get("AI_TEST_BEHAVIOR") == "clamp" else command["level"]
         emit({"type": "response", "id": identifier, "command": typ, "success": True})
     elif typ == "get_messages":
         emit({"type": "response", "id": identifier, "command": typ, "success": True, "data": {"messages": [{"role": "user", "content": "Restored string history"}] if os.environ.get("AI_TEST_BEHAVIOR") == "history" else history}})
+    elif typ == "new_session":
+        gate("reset")
+        emit({"type": "response", "id": identifier, "command": typ, "success": True, "data": {"cancelled": False}})
+    elif typ == "prompt" and command.get("message") == "/nvim_ai_capabilities":
+        with open(os.environ["AI_TEST_ARGV_LOG"], "a") as out:
+            out.write(json.dumps({"capability_prompt": True, "pid": os.getpid()}) + "\n")
+        behavior = os.environ.get("AI_TEST_BEHAVIOR")
+        active = tools_arg.split(",")
+        if behavior == "wrong-capability":
+            active = ["read", "webfetch"]
+        emit({"type": "extension_ui_request", "method": "setStatus", "statusKey": "nvim-ai-capabilities",
+              "statusText": json.dumps({"tools": active})})
+        emit({"type": "response", "id": identifier, "command": typ, "success": True,
+              "data": {"disposition": "handled"}})
+    elif typ == "prompt" and mode == "selection":
+        gate("acceptance")
+        message = command["message"]
+        with open(os.environ["AI_TEST_LOG"], "a") as out:
+            out.write(json.dumps({"mode": mode, "provider": provider, "model": model, "message": message}) + "\n")
+        emit({"type": "response", "id": identifier, "command": typ, "success": True, "data": {"disposition": "started"}})
+        job = message.split("Job: ", 1)[1].split("\n", 1)[0]
+        request = message.split("\nRequest: ", 1)[1].split("\n", 1)[0]
+        selected = message.split("<<<SELECTION\n", 1)[1].split("\nSELECTION>>>", 1)[0]
+        time.sleep(0.2)
+        proposal = None
+        if request.startswith("REPLACE:"):
+            proposal = request[len("REPLACE:"):].replace("\\n", "\n")
+        elif request == "UPPER":
+            proposal = selected.upper()
+        elif request == "FENCE":
+            proposal = "```lua\n" + selected.upper() + "\n```\n"
+        elif request == "BADJOB":
+            emit({"type": "tool_execution_start", "toolCallId": "c1", "toolName": "replace_selection", "args": {"job": "nope", "text": "x"}})
+            emit({"type": "tool_execution_end", "toolCallId": "c1", "toolName": "replace_selection", "isError": False})
+        if proposal is not None:
+            emit({"type": "tool_execution_start", "toolCallId": "c1", "toolName": "replace_selection", "args": {"job": job, "text": proposal}})
+            emit({"type": "tool_execution_end", "toolCallId": "c1", "toolName": "replace_selection", "isError": False})
+            emit({"type": "message_end", "message": {"role": "assistant", "content": [], "stopReason": "toolUse"}})
+        else:
+            emit({"type": "message_end", "message": {"role": "assistant", "content": [{"type": "text", "text": "answer to " + request}], "stopReason": "stop"}})
+        emit({"type": "auto_compaction_start"})
+        emit({"type": "auto_retry_start"})
+        gate("retry")
+        emit({"type": "auto_compaction_end"})
+        emit({"type": "agent_end"})
+        gate("post-settled")
+        emit({"type": "agent_settled"})
     elif typ == "prompt":
+        gate("acceptance")
         message = command["message"]
         with open(os.environ["AI_TEST_LOG"], "a") as out:
             out.write(json.dumps({"mode": mode, "provider": provider, "model": model, "session_id": session_id, "thinking": thinking, "message": message, "previous_messages": len(history)}) + "\n")
@@ -70,13 +165,26 @@ for line in sys.stdin:
                 out.write("# changed by agent\n")
             emit({"type": "tool_execution_end", "toolName": "edit", "isError": False})
         emit({"type": "message_end", "message": {"role": "assistant", "content": [{"type": "text", "text": "done"}], "stopReason": "stop"}})
+        emit({"type": "auto_compaction_start"})
+        emit({"type": "auto_retry_start"})
+        gate("retry")
+        emit({"type": "auto_compaction_end"})
         emit({"type": "agent_end"})
+        gate("post-settled")
         history.extend([{"role": "user", "content": message}, {"role": "assistant", "content": "done"}])
         if history_path:
+            os.makedirs(os.path.dirname(history_path), exist_ok=True)
             with open(history_path, "w") as out:
                 json.dump(history, out)
         emit({"type": "agent_settled"})
         if "process-exits" in message:
             sys.exit(3)
     elif typ == "abort" or typ == "clear_queue":
-        emit({"type": "response", "id": identifier, "command": typ, "success": True})
+        success = not (typ == "abort" and os.path.exists(os.environ.get("AI_TEST_ABORT_FAIL_FILE", "")))
+        emit({"type": "response", "id": identifier, "command": typ, "success": success})
+
+gate("exit")
+hold_exit = os.environ.get("AI_TEST_HOLD_EXIT_FILE")
+if hold_exit and os.path.exists(hold_exit + ".armed"):
+    while not os.path.exists(hold_exit):
+        time.sleep(0.01)

@@ -1,6 +1,6 @@
 -- Shared UI behavior without Pi processes or providers.
 vim.opt.rtp:append(vim.fn.getcwd())
-require('ai').setup({ comments = { enabled = false } })
+require('ai').setup(dofile('tests/fixtures/ai_setup.lua').options({ comments = { enabled = false } }))
 local view = require('ai.ui.view')
 local submitted, accept = {}, true
 local v = view.new('/tmp/project', 'Pi test', 'i: prompt  q: hide', function() return 'Ready' end,

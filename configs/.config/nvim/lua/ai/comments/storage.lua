@@ -1,20 +1,31 @@
 -- Only handled marker fingerprints are stored here; never prompts or credentials.
 local M = {}
+local handled_by_root = {}
+
+local function canonical(root)
+  return vim.uv.fs_realpath(root) or vim.fs.normalize(vim.fn.fnamemodify(root, ':p'))
+end
 
 local function filename(root)
+  root = canonical(root)
   -- Preserve the old state directory to avoid replaying handled requests.
   return vim.fn.stdpath('state') .. '/ai-comments/' .. vim.fn.sha256(root) .. '.json'
 end
 
 function M.load(root)
+  root = canonical(root)
+  if handled_by_root[root] then return handled_by_root[root] end
   local path = filename(root)
-  if vim.fn.filereadable(path) == 0 then return {} end
-  local ok, hashes = pcall(vim.json.decode, table.concat(vim.fn.readfile(path), '\n'))
-  if not ok or type(hashes) ~= 'table' then return {} end
   local seen = {}
-  for _, hash in ipairs(hashes) do
-    if type(hash) == 'string' and hash:match('^%x+$') then seen[hash] = true end
+  if vim.fn.filereadable(path) == 1 then
+    local ok, hashes = pcall(vim.json.decode, table.concat(vim.fn.readfile(path), '\n'))
+    if ok and type(hashes) == 'table' then
+      for _, hash in ipairs(hashes) do
+        if type(hash) == 'string' and hash:match('^%x+$') then seen[hash] = true end
+      end
+    end
   end
+  handled_by_root[root] = seen
   return seen
 end
 

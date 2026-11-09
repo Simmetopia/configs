@@ -5,18 +5,28 @@ local protocol = require('ai.protocol')
 local M = {}
 local serial = 0
 local clients = {}
+local idle_waiters = {}
 
 local function close(handle)
   if handle and not handle:is_closing() then handle:close() end
 end
 
-function M.spawn(root, args, callbacks)
+local function notify_idle()
+  if next(clients) then return end
+  local waiters = idle_waiters
+  idle_waiters = {}
+  for _, callback in ipairs(waiters) do callback() end
+end
+
+function M.spawn(root, args, callbacks, env_overrides)
   local client = { callbacks = {}, parser = { pending = '' }, alive = true, hooks = callbacks }
   local stdin, stdout, stderr = uv.new_pipe(false), uv.new_pipe(false), uv.new_pipe(false)
   client.stdin = stdin
   local handle, err
+  local inherited = vim.fn.environ()
+  for name, value in pairs(env_overrides or {}) do inherited[name] = value end
   local env = {}
-  for name, value in pairs(vim.fn.environ()) do env[#env + 1] = name .. '=' .. value end
+  for name, value in pairs(inherited) do env[#env + 1] = name .. '=' .. value end
   handle, err = uv.spawn(require('ai.config').options.executable, {
     cwd = root, args = args, env = env, stdio = { stdin, stdout, stderr },
   }, function(code)
@@ -29,6 +39,7 @@ function M.spawn(root, args, callbacks)
       close(handle)
       clients[client] = nil
       callbacks.on_exit(code, client.stopping)
+      notify_idle()
     end)
   end)
   if not handle then
@@ -117,7 +128,11 @@ function M.is_idle()
   return next(clients) == nil
 end
 
-function M.shutdown()
+function M.shutdown(on_idle)
+  if type(on_idle) == 'function' then
+    idle_waiters[#idle_waiters + 1] = on_idle
+    if M.is_idle() then vim.schedule(notify_idle) end
+  end
   for client in pairs(clients) do M.stop(client) end
 end
 
