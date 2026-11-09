@@ -102,7 +102,7 @@ end
 
 function M.render(entries, opts)
   local icons = highlights.icons()
-  local lines, marks, groups = {}, {}, {}
+  local lines, marks, groups, messages = {}, {}, {}, {}
   local function add(text) lines[#lines + 1] = text; return #lines - 1 end
   local function mark(row, col, o) marks[#marks + 1] = { row, col, o } end
   local function span(row, text, group) if #text > 0 then mark(row, 0, { end_col = #text, hl_group = group, priority = 200 }) end end
@@ -116,14 +116,19 @@ function M.render(entries, opts)
     mark(row, 0, { virt_text = { { icons.band .. ' ', group } }, virt_text_pos = 'overlay' })
     mark(row, 3, { virt_text = { { icon .. ' ', group } }, virt_text_pos = 'inline' })
     mark(row, 0, { end_col = #header, hl_group = group, priority = 200 })
-    if e.time and not streaming then
-      mark(row, 0, { virt_text = { { os.date('%H:%M', e.time), { group, 'AIBandMeta' } } }, virt_text_pos = 'right_align' })
-    end
     local body_lines, fenced = body(text)
-    for i, line in ipairs(body_lines) do
-      local r = add(line)
-      if fenced[i] then mark(r, 0, { line_hl_group = 'AICode' }) end
+    local folded = not streaming and opts.folded and opts.folded[e.uid]
+    local meta = {}
+    if folded then meta[1] = { icons.fold_closed .. (' %d lines  '):format(#body_lines), 'AIBandMeta' } end
+    if e.time and not streaming then meta[#meta + 1] = { os.date('%H:%M', e.time), { group, 'AIBandMeta' } } end
+    if #meta > 0 then mark(row, 0, { virt_text = meta, virt_text_pos = 'right_align' }) end
+    if not folded then
+      for i, line in ipairs(body_lines) do
+        local r = add(line)
+        if fenced[i] then mark(r, 0, { line_hl_group = 'AICode' }) end
+      end
     end
+    if not streaming then messages[#messages + 1] = { first = row, last = #lines - 1, key = e.uid } end
     add('')
   end
 
@@ -146,12 +151,14 @@ function M.render(entries, opts)
             or ('%s %d events · %s'):format(icons.fold_closed, count, vim.split(entries[j].text, '\n', { plain = true })[1])
           local row = add(header)
           mark(row, 0, { line_hl_group = 'AIFold' })
-          groups[#groups + 1] = { row = row, key = e.uid }
+          local group = { row = row, key = e.uid }
+          groups[#groups + 1] = group
           if is_open then
             for k = i, j do
               for _, line in ipairs(event_lines(entries[k], icons)) do span(add(line), line, 'AIEvent') end
             end
           end
+          group.last = #lines - 1
         end
         i = j + 1
       else
@@ -179,7 +186,7 @@ function M.render(entries, opts)
     local e = { role = 'assistant', model = M.short_model(opts.stream_model) }
     message(e, message_header(e, true), opts.stream, true)
   end
-  return { lines = lines, marks = marks, groups = groups }
+  return { lines = lines, marks = marks, groups = groups, messages = messages }
 end
 
 return M

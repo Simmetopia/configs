@@ -10,6 +10,7 @@ function M.setup(buf, win)
   vim.wo[win].linebreak = true
   vim.wo[win].conceallevel = require('ai.config').options.ui.conceallevel
   vim.wo[win].cursorline = false
+  vim.wo[win].foldenable = false
 end
 
 return M

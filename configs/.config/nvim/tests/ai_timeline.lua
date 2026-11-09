@@ -66,6 +66,27 @@ assert(out.lines[2] == '' and out.lines[3]:match('^## You'))
 local long = t.message({ role = 'user', text = 'x', label = string.rep('long/path/', 10) .. 'file.lua:1' })
 out = t.render({ long }, { width = 20, open = {} })
 assert(vim.fn.strdisplaywidth(out.lines[1]) <= 20 - 6 and out.lines[1]:find('…', 1, true))
+-- folded messages and message ranges
+out = t.render({ pi }, { width = 80, open = {}, folded = { [pi.uid] = true } })
+assert(#out.lines == 2 and out.lines[1] == '## Pi · claude-opus-5-5' and out.lines[2] == '', vim.inspect(out.lines))
+local fold_chunk
+for _, m in ipairs(out.marks) do
+  if m[1] == 0 and m[3].virt_text_pos == 'right_align' then
+    fold_chunk = fold_chunk or {}
+    for _, c in ipairs(m[3].virt_text) do fold_chunk[#fold_chunk + 1] = c[1] end
+  end
+end
+assert(fold_chunk and table.concat(fold_chunk):find('▸ 1 lines', 1, true), 'folded chunk')
+out = t.render({ pi }, { width = 80, open = {} })
+assert(vim.deep_equal(out.messages[1], { first = 0, last = 1, key = pi.uid }), vim.inspect(out.messages))
+out = t.render({ pi }, { width = 80, open = {}, folded = { [pi.uid] = true } })
+assert(vim.deep_equal(out.messages[1], { first = 0, last = 0, key = pi.uid }), vim.inspect(out.messages))
+out = t.render({ pi }, { width = 80, open = {}, stream = 'partial' })
+assert(#out.messages == 1, 'streaming message is not foldable')
+out = t.render({ e1, e2, e3 }, { width = 80, open = { [e1.uid] = true } })
+assert(out.groups[1].last == 3)
+out = t.render({ e1, e2, e3 }, { width = 80, open = {} })
+assert(out.groups[1].last == 0)
 -- height
 assert(t.height(user) == 3 and t.height(e1) == 1)
 -- highlights_reapplied

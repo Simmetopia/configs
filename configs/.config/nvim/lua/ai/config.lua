@@ -24,7 +24,7 @@ M.defaults = {
     restored_bytes = 20000,
     handled_markers = 1000,
   },
-  ui = { width = 0.8, height = 0.75, border = 'single', conceallevel = 0,
+  ui = { width = 0.8, height = 0.75, border = 'single', conceallevel = 0, restore_history = false,
     icons = { user = '', assistant = '󰚩', warn = '', error = '', running = '⋯', ok = '✓', failed = '✗',
       fold_closed = '▸', fold_open = '▾', band = '▓▓' } },
 }

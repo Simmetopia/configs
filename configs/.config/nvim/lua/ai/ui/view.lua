@@ -18,7 +18,7 @@ end
 
 function M.new(root, title, help, status, stream, submit, owner, stream_model)
   local view = { root = root, title = title, help = help, status = status, stream = stream, submit = submit,
-    owner = owner or 'default', stream_model = stream_model, entries_list = {}, index = {}, open = {}, groups = {} }
+    owner = owner or 'default', stream_model = stream_model, entries_list = {}, index = {}, open = {}, folded = {}, groups = {}, messages = {} }
   views[view] = true
   return view
 end
@@ -31,19 +31,44 @@ function M.entries(view)
   return view.entries_list
 end
 
+local function trim(view)
+  local list, total = view.entries_list, 0
+  for _, e in ipairs(list) do total = total + timeline.height(e) end
+  local limit = require('ai.config').options.limits.history_lines
+  while total > limit and #list > 1 do
+    local first = table.remove(list, 1)
+    view.index[first.uid] = nil
+    total = total - timeline.height(first)
+  end
+end
+
 function M.add(view, entry)
   if not view.index[entry.uid] then
     view.index[entry.uid] = true
     view.entries_list[#view.entries_list + 1] = entry
-    local list, total = view.entries_list, 0
-    for _, e in ipairs(list) do total = total + timeline.height(e) end
-    local limit = require('ai.config').options.limits.history_lines
-    while total > limit and #list > 1 do
-      local first = table.remove(list, 1)
-      view.index[first.uid] = nil
-      total = total - timeline.height(first)
+    trim(view)
+  end
+end
+
+function M.hold_history(view, entries)
+  view.held = entries
+  if #entries > 0 then
+    M.event(view, 'info', ('Resumed session — %d earlier messages hidden (H to show)'):format(#entries))
+  end
+end
+
+function M.show_history(view)
+  if not view.held or #view.held == 0 then return end
+  local list = view.entries_list
+  for i, e in ipairs(view.held) do
+    if not view.index[e.uid] then
+      view.index[e.uid] = true
+      table.insert(list, i, e)
     end
   end
+  view.held = nil
+  trim(view)
+  M.render(view)
 end
 
 function M.message(view, role, text, opts)
@@ -69,7 +94,7 @@ function M.render(view)
   if not view.buf or not vim.api.nvim_buf_is_valid(view.buf) then return end
   local width = valid(view.win) and vim.api.nvim_win_get_width(view.win) or 80
   local stream = view.stream()
-  local result = timeline.render(view.entries_list, { width = width, open = view.open, stream = stream ~= '' and stream or nil,
+  local result = timeline.render(view.entries_list, { width = width, open = view.open, folded = view.folded, stream = stream ~= '' and stream or nil,
     stream_model = view.stream_model and view.stream_model() or nil })
   local lines = #result.lines > 0 and result.lines or { '' }
   -- Follow new output only while the reader is already at the bottom.
@@ -79,7 +104,7 @@ function M.render(view)
   vim.bo[view.buf].modifiable = false
   vim.api.nvim_buf_clear_namespace(view.buf, ns, 0, -1)
   for _, m in ipairs(result.marks) do pcall(vim.api.nvim_buf_set_extmark, view.buf, ns, m[1], m[2], m[3]) end
-  view.groups = result.groups
+  view.groups, view.messages = result.groups, result.messages
   if valid(view.win) then
     decorate_border(view)
     if follow then vim.api.nvim_win_set_cursor(view.win, { #lines, 0 }) end
@@ -88,20 +113,37 @@ end
 
 -- Display-only: leave the workflow, live stream and persisted session untouched.
 function M.clear(view)
-  view.entries_list, view.index, view.open = {}, {}, {}
+  view.entries_list, view.index, view.open, view.folded = {}, {}, {}, {}
   M.render(view)
 end
 
+-- The fold unit (message or event group) containing a 0-based row.
+local function unit_at(view, row)
+  for _, g in ipairs(view.groups) do
+    if row >= g.row and row <= g.last then return view.open, g.key, g.row, true end
+  end
+  for _, m in ipairs(view.messages) do
+    if row >= m.first and row <= m.last then return view.folded, m.key, m.first, false end
+  end
+end
+
 local function fold(view, action)
-  if action == 'toggle' then
-    local row = vim.api.nvim_win_get_cursor(view.win)[1] - 1
-    for _, g in ipairs(view.groups) do
-      if g.row == row then view.open[g.key] = not view.open[g.key] or nil end
-    end
-  elseif action == 'open' then
+  if action == 'openall' then
+    view.folded = {}
     for _, g in ipairs(view.groups) do view.open[g.key] = true end
-  else
+  elseif action == 'closeall' then
     view.open = {}
+    for _, e in ipairs(view.entries_list) do if e.kind == 'message' then view.folded[e.uid] = true end end
+  else
+    local set, key, first, is_group = unit_at(view, vim.api.nvim_win_get_cursor(0)[1] - 1)
+    if not set then return end
+    local closed = is_group and not set[key] or not is_group and set[key]
+    local want_closed
+    if action == 'toggle' then want_closed = not closed else want_closed = action == 'close' end
+    set[key] = (want_closed ~= is_group) or nil
+    M.render(view)
+    if valid(view.win) then vim.api.nvim_win_set_cursor(view.win, { first + 1, 0 }) end
+    return
   end
   M.render(view)
 end
@@ -179,10 +221,13 @@ function M.toggle(view)
     vim.bo[view.buf].bufhidden = 'hide'
     vim.keymap.set('n', '<C-l>', function() M.clear(view) end, { buffer = view.buf, desc = 'Clear displayed AI history' })
     for _, lhs in ipairs({ 'za', '<Tab>' }) do
-      vim.keymap.set('n', lhs, function() fold(view, 'toggle') end, { buffer = view.buf, desc = 'Toggle event group' })
+      vim.keymap.set('n', lhs, function() fold(view, 'toggle') end, { buffer = view.buf, desc = 'Toggle message or event group' })
     end
-    vim.keymap.set('n', 'zR', function() fold(view, 'open') end, { buffer = view.buf, desc = 'Open all event groups' })
-    vim.keymap.set('n', 'zM', function() fold(view, 'close') end, { buffer = view.buf, desc = 'Close all event groups' })
+    vim.keymap.set('n', 'zc', function() fold(view, 'close') end, { buffer = view.buf, desc = 'Close message or event group' })
+    vim.keymap.set('n', 'zo', function() fold(view, 'open') end, { buffer = view.buf, desc = 'Open message or event group' })
+    vim.keymap.set('n', 'zR', function() fold(view, 'openall') end, { buffer = view.buf, desc = 'Open all messages and event groups' })
+    vim.keymap.set('n', 'zM', function() fold(view, 'closeall') end, { buffer = view.buf, desc = 'Close all messages and event groups' })
+    vim.keymap.set('n', 'H', function() M.show_history(view) end, { buffer = view.buf, desc = 'Show held-back history' })
     vim.keymap.set('n', 'q', function() M.hide(view) end, { buffer = view.buf })
     vim.keymap.set('n', 'i', function() M.input(view) end, { buffer = view.buf })
   end

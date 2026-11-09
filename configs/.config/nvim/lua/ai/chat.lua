@@ -4,6 +4,7 @@ local sessions = require('ai.session')
 local protocol = require('ai.protocol')
 local view = require('ai.ui.view')
 local tools = require('ai.ui.tools')
+local timeline = require('ai.ui.timeline')
 local profiles = require('ai.profiles')
 local M = {}
 local chats = {}
@@ -125,13 +126,20 @@ start = function(c)
     end,
     on_ready = function(s, history)
       if not owns_session(s) then return end
+      local restored = {}
       for _, message in ipairs(history) do
         if message.role == 'user' or message.role == 'assistant' then
           local text = protocol.text(message)
-          if text ~= '' then view.message(c.view, message.role,
-            protocol.clip(text, require('ai.config').options.limits.restored_bytes),
-            { restored = true, model = s.model and s.model.id }) end
+          if text ~= '' then
+            restored[#restored + 1] = timeline.message({ role = message.role, restored = true, model = s.model and s.model.id,
+              text = protocol.clip(text, require('ai.config').options.limits.restored_bytes) })
+          end
         end
+      end
+      if require('ai.config').options.ui.restore_history then
+        for _, e in ipairs(restored) do view.add(c.view, e) end
+      else
+        view.hold_history(c.view, restored)
       end
       render(c)
       dispatch(c, token)

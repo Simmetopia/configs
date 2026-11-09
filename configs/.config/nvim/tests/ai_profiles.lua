@@ -125,7 +125,7 @@ assert(not ok and tostring(err):find('models.json', 1, true), tostring(err))
 assert(vim.uv.fs_readlink(raced_conflict.agent_dir .. '/models.json') == other_source)
 
 -- switch_waits_for_process_exit_and_restores_profile_scoped_help_roles
-config.setup(fixture.options())
+config.setup(fixture.options({ ui = { restore_history = true } }))
 vim.fn.writefile({}, vim.env.AI_TEST_ARGV_LOG)
 vim.fn.writefile({}, vim.env.AI_TEST_LOG)
 require('ai').setup(config.options)
